@@ -2,18 +2,6 @@ let activeEffect = null
 const effectStack = []
 const bucket = new WeakMap()
 
-function cleanupEffects(effect) {
-  effect.deps.forEach(deps => {
-    // target
-    //  - deps
-    //    - effect
-    // effect 存储的是 deps -> 先遍历删除当前的 effect
-    deps.delete(effect)
-  })
-  // 清空当前 effect 的 deps
-  effect.deps.length = 0
-}
-
 export function effect(fn) {
   const effectFn = () => {
     cleanupEffects(effectFn)
@@ -62,5 +50,28 @@ export function trigger(target, key) {
   // })
   // 使用一个新的 Set 来进行遍历，防止无限循环
   const depsToRun = new Set(deps)
-  depsToRun.forEach(effect => effect())
+  triggerEffects(depsToRun)
 }
+
+function cleanupEffects(effect) {
+  effect.deps.forEach(deps => {
+    // target
+    //  - deps
+    //    - effect
+    // effect 存储的是 deps -> 先遍历删除当前的 effect
+    deps.delete(effect)
+  })
+  // 清空当前 effect 的 deps
+  effect.deps.length = 0
+}
+
+function triggerEffects(deps) {
+  deps.forEach(effect => {
+    // 避免无限递归循环 obj.foo++
+    // 同时 get + set -> 在运行当前 effect 未结束时，又调用了当前 effect
+    if(activeEffect !== effect) {
+      effect()
+    }
+  })
+}
+
