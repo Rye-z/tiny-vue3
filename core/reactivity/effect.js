@@ -2,7 +2,9 @@ let activeEffect = null
 const effectStack = []
 const bucket = new WeakMap()
 
-export function effect(fn) {
+export function effect(fn, options = {
+  scheduler: null
+}) {
   const effectFn = () => {
     cleanupEffects(effectFn)
     activeEffect = effectFn
@@ -12,10 +14,14 @@ export function effect(fn) {
     fn()
     // 将当前副作用函数弹出
     effectStack.pop()
+    /*
+    * 注意：如果不是嵌套 effect，activeEffect 的值会被置为 undefined
+    * */
     // 恢复到之前的值
     activeEffect = effectStack[effectStack.length - 1]
   }
   effectFn.deps = []
+  effectFn.options = options
   effectFn()
 }
 
@@ -28,6 +34,12 @@ export function track(target, key) {
   if (!deps) {
     depsMap.set(key, deps=new Set())
   }
+  /**
+   * 需要判断是否存在 activeEffect，只有在设置 effect(fn) 的时候，对应的 activeEffect 才是应该收集的 effectFn
+   * 仅仅是属性访问不需要添加副作用函数
+   */
+  if (!activeEffect) return
+
   deps.add(activeEffect)
   activeEffect.deps.push(deps)
 }
@@ -49,7 +61,14 @@ export function trigger(target, key) {
   //   set.add(1)
   // })
   // 使用一个新的 Set 来进行遍历，防止无限循环
-  const depsToRun = new Set(deps)
+  const depsToRun = new Set()
+  deps.forEach(effect => {
+    // 避免无限递归循环 obj.foo++
+    // 同时 get + set -> 在运行当前 effect 未结束时，又调用了当前 effect
+    if(activeEffect !== effect) {
+      depsToRun.add(effect)
+    }
+  })
   triggerEffects(depsToRun)
 }
 
@@ -67,9 +86,9 @@ function cleanupEffects(effect) {
 
 function triggerEffects(deps) {
   deps.forEach(effect => {
-    // 避免无限递归循环 obj.foo++
-    // 同时 get + set -> 在运行当前 effect 未结束时，又调用了当前 effect
-    if(activeEffect !== effect) {
+    if (effect.options.scheduler) {
+      effect.options.scheduler(effect)
+    } else {
       effect()
     }
   })

@@ -67,5 +67,25 @@ describe('effect', function() {
       obj.foo++
     })
   });
+});
 
+describe('scheduler', () => {
+  it('使用 scheduler 控制调度时机', function() {
+    jest.useFakeTimers()
+    const obj = reactive({foo: 1})
+    let bar
+
+    effect(() => {
+      bar = obj.foo
+    }, {
+      scheduler(fn) {
+        setTimeout(fn)
+      }
+    })
+    obj.foo = 0
+
+    bar = 3
+    jest.runAllTimers()
+    expect(bar).toBe(0)
+  });
 });
