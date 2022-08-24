@@ -1,7 +1,8 @@
 let activeEffect = null
+const effectStack = []
 const bucket = new WeakMap()
 
-function cleanUpEffects(effect) {
+function cleanupEffects(effect) {
   effect.deps.forEach(deps => {
     // target
     //  - deps
@@ -15,9 +16,16 @@ function cleanUpEffects(effect) {
 
 export function effect(fn) {
   const effectFn = () => {
-    cleanUpEffects(effectFn)
+    cleanupEffects(effectFn)
     activeEffect = effectFn
+    // 先将当前的 effect 入栈
+    effectStack.push(effectFn)
+    // 执行
     fn()
+    // 将当前副作用函数弹出
+    effectStack.pop()
+    // 恢复到之前的值
+    activeEffect = effectStack[effectStack.length - 1]
   }
   effectFn.deps = []
   effectFn()

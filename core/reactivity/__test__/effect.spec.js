@@ -11,12 +11,13 @@ describe('effect', function() {
     counter.num = 7
     expect(dummy).toBe(8)
   });
+
   it('分支切换 / 清除遗留富副作用函数', function() {
     let text
-    const obj = reactive({ ok: true, text: 'hello'})
+    const obj = reactive({ ok: true, text: 'hello' })
 
     const fn = jest.fn(() => {
-      text = obj.ok ? obj.text : "sorry"
+      text = obj.ok ? obj.text : 'sorry'
     })
     effect(fn)
     expect(fn).toHaveBeenCalledTimes(1)
@@ -31,5 +32,32 @@ describe('effect', function() {
      */
     obj.text = 'change'
     expect(fn).toHaveBeenCalledTimes(2)
+  });
+
+  it('嵌套 effect', function() {
+    let obj = reactive({ foo: 'foo', bar: 'bar' })
+    const fn1 = jest.fn(() => () => console.log('fn1'))
+    const fn2 = jest.fn(() => () => console.log('fn2'))
+
+    effect(() => {
+      fn1()
+      effect(() => {
+        fn2()
+        obj.foo
+      })
+      obj.bar
+    })
+    expect(fn1).toHaveBeenCalledTimes(1)
+    expect(fn2).toHaveBeenCalledTimes(1)
+    obj.foo = 1
+    // obj.foo 在内层 effect，obj.foo 改变时不应该触发外层 effect
+    expect(fn1).toHaveBeenCalledTimes(1)
+    expect(fn2).toHaveBeenCalledTimes(2)
+    // obj.bar 在外层，因为内层还嵌套了一个 effect()，所以会同时触发内层的 effect
+    // => fn1 和 fn2 都会被调用
+    obj.bar = 1
+    expect(fn1).toHaveBeenCalledTimes(2)
+    expect(fn2).toHaveBeenCalledTimes(3)
+
   });
 });
