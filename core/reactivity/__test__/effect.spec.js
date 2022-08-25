@@ -295,6 +295,31 @@ describe('effect', function() {
     arr.length = 0
     expect(fn).toHaveBeenCalledTimes(3)
   });
+
+  it('arr.includes(arr[0])', function() {
+    const obj = {}
+    const arr = reactive([obj])
+
+    /*
+    ==> EMCAScript 数组 includes 的执行流程
+      - 1. 让 O 的值为 ？ToObject(this value)
+        - this value 指的是代理对象
+      - 10. 重复，while（k < len）
+        - a. 让 elementK 的值为 ? Get(0, ！ToString((K)))
+        - b. 如果 SameValueZero(searchElement, elementK) 是 true，返回 true
+        - 将 k 设置为 k + 1
+    ==> 可以看出 `includes` 会通过索引来读取数组的值
+      - 但是在 10-b 比较这一步：searchElement 和 elementK 并不是同一个值
+        - 这是因为 `reactive` 默认将对象递归代理
+          - `arr[0]` 是 一个对象
+            - `arr[0]` 会创建一个新的代理对象，假设为 **Proxy_a**
+            - `includes` 会遍历每个索引创建代理对象，假设为 **Proxy_b_index**
+            - **Proxy_a** 和 **Proxy_b_index** 一定是不相等的
+
+    ==> 使用一个 reactiveMap 来存储原始值和代理的映射关系
+    * */
+    expect(arr.includes(arr[0])).toBe(true)
+  });
 });
 
 describe('scheduler', () => {

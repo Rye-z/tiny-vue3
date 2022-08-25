@@ -6,6 +6,7 @@ import {
 import { equal } from '../utils';
 
 export let ITERATE_KEY = Symbol()
+const reactiveMap = new Map()
 
 function createReactive(
   obj,
@@ -104,7 +105,12 @@ function createReactive(
 }
 
 export function reactive(obj) {
-  return createReactive(obj)
+  let existProxy = reactiveMap.get(obj)
+
+  if (!existProxy) {
+    reactiveMap.set(obj, (existProxy = createReactive(obj)))
+  }
+  return existProxy
 }
 
 export function shallowReactive(obj) {
