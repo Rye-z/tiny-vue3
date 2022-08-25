@@ -8,6 +8,17 @@ import { equal } from '../utils';
 export let ITERATE_KEY = Symbol()
 const reactiveMap = new Map()
 
+// ================ Start: hack Array methods ================
+const originalMethod = Array.prototype.includes
+const arrayInstrumentations = {
+  includes(key) {
+    // 先查找代理对象，this 是代理对象，因为 arr.includes 的 arr 是代理对象
+    return originalMethod.call(this, key) || originalMethod.call(this.raw, key)
+  }
+}
+
+// ================ End: hack Array methods ================
+
 function createReactive(
   obj,
   isShallow = false,
@@ -22,6 +33,13 @@ function createReactive(
       if (!isReadonly && typeof key !== 'symbol') {
         // 注意 track 的顺序，确保一定会执行
         track(target, key)
+      }
+
+      if (Array.isArray(target)) {
+        // arr.includes 会先读取 'includes' 属性
+        if (arrayInstrumentations.hasOwnProperty(key)) {
+          return Reflect.get(arrayInstrumentations, key, receiver)
+        }
       }
 
       const res = Reflect.get(target, key, receiver)
