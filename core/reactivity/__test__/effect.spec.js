@@ -68,6 +68,26 @@ describe('effect', function() {
     })
   });
 
+  it('set 值不变时，不触发副作用函数', function() {
+    const obj = reactive({ foo: 1 })
+    const fn = jest.fn(() => obj.foo)
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    obj.foo = 1
+    expect(fn).toHaveBeenCalledTimes(1)
+    obj.foo++
+    expect(fn).toHaveBeenCalledTimes(2)
+  });
+
+  it('NaN 值边界处理', function() {
+    const obj = reactive({ foo: 1, bar: NaN})
+    const fn = jest.fn(() => obj.foo)
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    obj.bar = NaN
+    expect(fn).toHaveBeenCalledTimes(1)
+  });
+
   it('监听 key in obj', function() {
     const obj = reactive({ foo: 1 })
     const fn = jest.fn(() => {
