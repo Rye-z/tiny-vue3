@@ -35,6 +35,15 @@ function createReactive(obj) {
       // target - iterate_key - effect
       track(target, ITERATE_KEY)
       return Reflect.ownKeys(target)
+    },
+    deleteProperty(target, key) {
+      // 检查是否为自身属性
+      const hasKey = target.hasOwnProperty(key)
+      const res = Reflect.deleteProperty(target, key)
+      if (hasKey && res) {
+        trigger(target, key, triggerType.DELETE)
+      }
+      return res
     }
   })
 }

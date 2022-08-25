@@ -105,6 +105,18 @@ describe('effect', function() {
     obj.foo++
     expect(fn).toHaveBeenCalledTimes(1)
   });
+
+  it('删除对象属性触发 for...in 副作用', function() {
+    const obj = reactive({ foo: 1 })
+    const fn = jest.fn(() => {
+      // 新增或者删除属性的时候，会对 for...in 造成影响
+      for (const k in obj) {}
+    })
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    delete obj.foo
+    expect(fn).toHaveBeenCalledTimes(2)
+  });
 });
 
 describe('scheduler', () => {
