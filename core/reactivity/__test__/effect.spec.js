@@ -80,7 +80,7 @@ describe('effect', function() {
   });
 
   it('NaN 值边界处理', function() {
-    const obj = reactive({ foo: 1, bar: NaN})
+    const obj = reactive({ foo: 1, bar: NaN })
     const fn = jest.fn(() => obj.foo)
     effect(fn)
     expect(fn).toHaveBeenCalledTimes(1)
@@ -135,6 +135,33 @@ describe('effect', function() {
     effect(fn)
     expect(fn).toHaveBeenCalledTimes(1)
     delete obj.foo
+    expect(fn).toHaveBeenCalledTimes(2)
+  });
+
+  it('原型链上的属性不应触发副作用函数', function() {
+    const child = reactive({})
+    const parent = reactive({ bar: 1 })
+    Object.setPrototypeOf(child, parent)
+
+    /**
+     * 1. 先访问 child.bar -> track(child, 'bar')
+     * 2. 因为 child 没有 'bar' 属性，所以会按照 __proto__ 查找，访问 parent.bar -> track(parent, 'bar')
+     * 3. 所以 child.bar 和 parent.bar 添加了同一个副作用函数
+     */
+
+    const fn = jest.fn(() => child.bar)
+
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+
+    /* 1. 调用 child.[[Set]] -> trigger(child, bar)；但如果设置的值不再对象上，会获取原型，调用原型上的 [[Set]] 方法
+       2. 根据 ECMA 规范：如果 parent 不是 null，返回 ? parent.[[Set]](P, V, receiver)
+          - receiver 还是 child，所以最终是对 child.bar 设置值，但是
+       所以 fn 会被触发两次
+       3. 处理方式：
+          - 由于 receiver 的存在，我们可以判断 target 和 receiver 是否同一个对象来规避原型链上属性的多次触发
+    * */
+    child.bar = 2
     expect(fn).toHaveBeenCalledTimes(2)
   });
 });

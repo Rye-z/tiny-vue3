@@ -10,6 +10,10 @@ export let ITERATE_KEY = Symbol()
 function createReactive(obj) {
   return new Proxy(obj, {
     get(target, key, receiver) {
+      if (key === 'raw') {
+        return target
+      }
+
       const res = Reflect.get(target, key, receiver)
       track(target, key)
       return res
@@ -35,7 +39,11 @@ function createReactive(obj) {
         return res
       }
 
-      trigger(target, key, type)
+      // 避免原型链的多次触发
+      if (equal(receiver.raw, target)) {
+        trigger(target, key, type)
+      }
+
       return res
     },
     // 拦截 `for...in`
