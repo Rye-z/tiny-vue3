@@ -216,6 +216,11 @@ describe('effect', function() {
   });
 
   it('arr[index] index >= arr.length 时 ，触发 length 副作用', function() {
+    /*  当对象为数组时:
+        - key 为索引值
+        - key < target.length => 不会影响数组长度 => SET 操作
+        - key >= target.length => 会影响数组长度 => ADD 操作
+    * */
     const arr = reactive([])
     const fn = jest.fn(() => arr.length)
     effect(fn)
@@ -223,6 +228,36 @@ describe('effect', function() {
     // length: 0 -> 1
     arr[0] = 1
     expect(fn).toHaveBeenCalledTimes(2)
+  });
+
+  it('修改 arr.length，隐式影响数组元素', function() {
+    /*  当对象为数组时:
+        - key 为索引值
+        - arr.length = newIndex
+          - 所有 index >= newIndex -> trigger(arr, index)
+    * */
+    const arr = reactive([1, 2, 3])
+    const fn1 = jest.fn(() => arr[0])
+    const fn2 = jest.fn(() => arr[1])
+    const fn3 = jest.fn(() => arr[2])
+
+    effect(fn1)
+    effect(fn2)
+    effect(fn3)
+
+    expect(fn1).toHaveBeenCalledTimes(1)
+    expect(fn2).toHaveBeenCalledTimes(1)
+    expect(fn3).toHaveBeenCalledTimes(1)
+
+    arr.length = 3
+    expect(fn1).toHaveBeenCalledTimes(1)
+    expect(fn2).toHaveBeenCalledTimes(1)
+    expect(fn3).toHaveBeenCalledTimes(1)
+
+    arr.length = 1
+    expect(fn1).toHaveBeenCalledTimes(1)
+    expect(fn2).toHaveBeenCalledTimes(2)
+    expect(fn3).toHaveBeenCalledTimes(2)
   });
 });
 

@@ -58,7 +58,7 @@ export function track(target, key) {
   activeEffect.deps.push(deps)
 }
 
-export function trigger(target, key, type) {
+export function trigger(target, key, type, newVal) {
   const depsToRun = getDepsToRun()
 
   let depsMap = bucket.get(target)
@@ -70,9 +70,30 @@ export function trigger(target, key, type) {
   // 收集当前 obj.key 的deps
   depsToRun.add(deps)
 
-  if (Array.isArray(target) && type === triggerType.ADD) {
-    const lengthDeps = depsMap.get('length')
-    depsToRun.add(lengthDeps)
+  if (Array.isArray(target)) {
+    if (type === triggerType.ADD) {
+      const lengthDeps = depsMap.get('length')
+      depsToRun.add(lengthDeps)
+    }
+    /*  当对象为数组时:
+        - key 为索引值
+        - key < target.length => 不会影响数组长度 => SET 操作
+        - key >= target.length => 会影响数组长度 => ADD 操作
+    * */
+    if (key === 'length') {
+      /*  当对象为数组时:
+          - key 为索引值
+          - arr.length = newIndex
+            - 所有 index >= newIndex -> trigger(arr, index)
+      * */
+      // 因为是数组，index 也就是属性值
+      depsMap.forEach((deps, index) => {
+        // newVal 是 length 的新值
+        if (index >= newVal) {
+          depsToRun.add(deps)
+        }
+      })
+    }
   }
 
   // 收集 obj.ITERATE_KEY 的 deps

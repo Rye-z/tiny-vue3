@@ -68,7 +68,7 @@ function createReactive(
 
       // 避免原型链的多次触发
       if (equal(receiver.raw, target)) {
-        trigger(target, key, type)
+        trigger(target, key, type, newVal)
       }
 
       return res
