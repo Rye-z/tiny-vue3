@@ -17,8 +17,12 @@ function traverse(value, seen) {
 
 export function watch(source, cb) {
   const seen = new Set()
+  let getter = source
 
-  effect(() => traverse(source, seen), {
+  if (typeof source !== 'function') {
+    getter = traverse(source, seen)
+  }
+  effect(getter, {
     scheduler() {
       cb()
     }
