@@ -17,8 +17,8 @@ function createReactive(
       if (key === 'raw') {
         return target
       }
-      // 只读不需要被 track
-      if (!isReadonly) {
+      // 1.只读不需要被 track 2. 内建 Symbol 不需要被 track，因为内建 Symbol 一般不需要修改
+      if (!isReadonly && typeof key !== 'symbol') {
         // 注意 track 的顺序，确保一定会执行
         track(target, key)
       }
@@ -75,10 +75,16 @@ function createReactive(
     },
     // 拦截 `for...in`
     ownKeys(target) {
-      // 因为 for...in 针对的是对象所有属性，所以无法用某个 key 来进行追踪
-      // 故这里使用 Symbol 来作为 for...in 追踪的唯一标识
-      // target - iterate_key - effect
-      track(target, ITERATE_KEY)
+      if (Array.isArray(target)) {
+        // 当数组 length 改变，会影响到 for...in 操作
+        // 所以当 effect 中有数组的 for...in 操作时，需要将 `length` 和 ownKeys 建立响应关联
+        track(target, 'length')
+      } else {
+        // 因为 for...in 针对的是对象所有属性，所以无法用某个 key 来进行追踪
+        // 故这里使用 Symbol 来作为 for...in 追踪的唯一标识
+        // target - iterate_key - effect
+        track(target, ITERATE_KEY)
+      }
       return Reflect.ownKeys(target)
     },
     deleteProperty(target, key) {

@@ -259,6 +259,42 @@ describe('effect', function() {
     expect(fn2).toHaveBeenCalledTimes(2)
     expect(fn3).toHaveBeenCalledTimes(2)
   });
+
+  it('for...in', function() {
+    const arr = reactive([1, 2, 3])
+    const fn = jest.fn(() => {
+      for (const index in arr) {}
+    })
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    /**
+     * 当 arr.length 改变，会影响到 for...in 操作
+     * - 1. 设置元素 arr[index] = 100，index > arr.length 时
+     * - 2. 修改 length 属性是，arr.length = 0
+     */
+    arr[100] = 100
+    expect(fn).toHaveBeenCalledTimes(2)
+    arr.length = 0
+    expect(fn).toHaveBeenCalledTimes(3)
+  });
+
+  it('for...of', function() {
+    const arr = reactive([1, 2, 3])
+    const fn = jest.fn(() => {
+      for (const index of arr) {}
+    })
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    /**
+     * for...of 和 for...in 类似，不需要增加额外代码
+     * 但需要知道 for...of 会读取 [Symbol.iterator] 属性
+     * 内建 Symbol 一般是不会修改的，所以 Symbol 不应该被 track
+     */
+    arr[100] = 100
+    expect(fn).toHaveBeenCalledTimes(2)
+    arr.length = 0
+    expect(fn).toHaveBeenCalledTimes(3)
+  });
 });
 
 describe('scheduler', () => {
