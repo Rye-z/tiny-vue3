@@ -3,7 +3,8 @@ const effectStack = []
 const bucket = new WeakMap()
 
 export function effect(fn, options = {
-  scheduler: null
+  scheduler: null,
+  lazy: false
 }) {
   const effectFn = () => {
     cleanupEffects(effectFn)
@@ -11,7 +12,7 @@ export function effect(fn, options = {
     // 先将当前的 effect 入栈
     effectStack.push(effectFn)
     // 执行
-    fn()
+    const res = fn()
     // 将当前副作用函数弹出
     effectStack.pop()
     /*
@@ -19,9 +20,14 @@ export function effect(fn, options = {
     * */
     // 恢复到之前的值
     activeEffect = effectStack[effectStack.length - 1]
+    // computed 需要运算结果
+    return res
   }
   effectFn.deps = []
   effectFn.options = options
+  if (options.lazy) {
+    return effectFn
+  }
   effectFn()
 }
 
