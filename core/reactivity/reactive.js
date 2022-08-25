@@ -1,6 +1,7 @@
 import {
   track,
-  trigger
+  trigger,
+  triggerType
 } from './effect.js';
 
 export let ITERATE_KEY = Symbol()
@@ -19,8 +20,12 @@ function createReactive(obj) {
       return res
     },
     set(target, key, val, receiver) {
+      // 为什么不用 target.hasOwnProperty(key) ??? 这里的 target 必然是原始对象
+      const type = target.hasOwnProperty(key)
+        ? triggerType.SET
+        : triggerType.ADD
       const res = Reflect.set(target, key, val, receiver)
-      trigger(target, key)
+      trigger(target, key, type)
       return res
     },
     // 拦截 `for...in`

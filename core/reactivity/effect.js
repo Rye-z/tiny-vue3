@@ -4,6 +4,12 @@ let activeEffect = null
 const effectStack = []
 const bucket = new WeakMap()
 
+export const triggerType = {
+  ADD: 'ADD',
+  SET: 'SET',
+  DELETE: 'DELETE'
+}
+
 export function effect(fn, options = {
   scheduler: null,
   lazy: false
@@ -40,7 +46,7 @@ export function track(target, key) {
   }
   let deps = depsMap.get(key)
   if (!deps) {
-    depsMap.set(key, deps=new Set())
+    depsMap.set(key, deps = new Set())
   }
   /**
    * 需要判断是否存在 activeEffect，只有在设置 effect(fn) 的时候，对应的 activeEffect 才是应该收集的 effectFn
@@ -52,7 +58,7 @@ export function track(target, key) {
   activeEffect.deps.push(deps)
 }
 
-export function trigger(target, key) {
+export function trigger(target, key, type) {
   const depsToRun = getDepsToRun()
 
   let depsMap = bucket.get(target)
@@ -64,8 +70,10 @@ export function trigger(target, key) {
   // 收集当前 obj.key 的deps
   depsToRun.add(deps)
   // 收集 obj.ITERATE_KEY 的 deps
-  const iterateDeps = depsMap.get(ITERATE_KEY)
-  depsToRun.add(iterateDeps)
+  if (type === triggerType.ADD) {
+    const iterateDeps = depsMap.get(ITERATE_KEY)
+    depsToRun.add(iterateDeps)
+  }
 
   triggerEffects(depsToRun.effects)
 }
@@ -92,7 +100,7 @@ function triggerEffects(deps) {
   })
 }
 
-function getDepsToRun(deps) {
+function getDepsToRun() {
   /* 当执行 effect 时，先 cleanUp 遗留的副作用函数，但是执行 effectFn，又会触发属性访问，在遍历的时候又会将 effect 添加到 deps 中
      相当于
      set = new Set([1])
