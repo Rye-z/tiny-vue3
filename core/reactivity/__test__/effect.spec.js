@@ -1,4 +1,7 @@
-import { reactive } from '../reactive.js';
+import {
+  reactive,
+  shallowReactive
+} from '../reactive.js';
 import { effect } from '../effect';
 
 describe('effect', function() {
@@ -163,6 +166,17 @@ describe('effect', function() {
     * */
     child.bar = 2
     expect(fn).toHaveBeenCalledTimes(2)
+  });
+
+  it('shallowReactive', function() {
+    const obj = shallowReactive({ foo: {bar: 1}})
+    const fn = jest.fn(() => obj.foo.bar)
+
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+
+    obj.foo.bar++
+    expect(fn).toHaveBeenCalledTimes(1)
   });
 });
 
