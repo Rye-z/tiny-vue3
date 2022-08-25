@@ -61,18 +61,30 @@ describe('effect', function() {
   });
 
   it('避免无限递归循环', function() {
-    const obj = reactive({foo: 1})
+    const obj = reactive({ foo: 1 })
     effect(() => {
       // 同时 get + set -> 在运行当前 effect 未结束时，又调用了当前 effect
       obj.foo++
     })
+  });
+
+  it('监听 key in obj', function() {
+    const obj = reactive({ foo: 1 })
+    const fn = jest.fn(() => {
+      'foo' in obj
+    })
+    effect(fn);
+    expect(fn).toHaveBeenCalledTimes(1)
+
+    obj.foo++
+    expect(fn).toHaveBeenCalledTimes(2)
   });
 });
 
 describe('scheduler', () => {
   it('使用 scheduler 控制调度时机', function() {
     jest.useFakeTimers()
-    const obj = reactive({foo: 1})
+    const obj = reactive({ foo: 1 })
     let bar
 
     effect(() => {
@@ -95,6 +107,7 @@ describe('scheduler', () => {
     const jobQueue = new Set()
     // 是否正在刷新队列
     let isFlushing = false
+
     function flushJob() {
       if (isFlushing) {
         return
@@ -108,9 +121,9 @@ describe('scheduler', () => {
       })
     }
 
-    const obj = reactive({ foo: 1})
+    const obj = reactive({ foo: 1 })
 
-    const fn = jest.fn(() => console.log(obj.foo))
+    const fn = jest.fn(() => obj.foo)
 
     effect(fn, {
       scheduler(fn) {

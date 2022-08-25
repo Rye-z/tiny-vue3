@@ -10,6 +10,12 @@ function createReactive(obj) {
       track(target, key)
       return res
     },
+    // 拦截 obj: key in obj
+    has(target, key, receiver) {
+      const res = Reflect.has(target, key, receiver)
+      track(target, key)
+      return res
+    },
     set(target, key, val, receiver) {
       const res = Reflect.set(target, key, val, receiver)
       trigger(target, key)
