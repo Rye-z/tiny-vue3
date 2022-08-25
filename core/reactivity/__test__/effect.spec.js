@@ -296,9 +296,9 @@ describe('effect', function() {
     expect(fn).toHaveBeenCalledTimes(3)
   });
 
-  it('arr.includes(arr[0])', function() {
-    const obj = {}
-    const arr = reactive([obj])
+  it('arrProxy.includes(arrProxy[0])', function() {
+    const rawObj = {}
+    const arrProxy = reactive([rawObj])
 
     /*
     ==> EMCAScript 数组 includes 的执行流程
@@ -318,13 +318,24 @@ describe('effect', function() {
 
     ==> 使用一个 reactiveMap 来存储原始值和代理的映射关系
     * */
-    expect(arr.includes(arr[0])).toBe(true)
+    expect(arrProxy.includes(arrProxy[0])).toBe(true)
   });
 
-  it('arr.includes(rawObj)', function() {
-    const obj = {}
-    const arr = reactive([obj])
-    expect(arr.includes(obj)).toBe(true)
+  it('arrProxy.includes(rawObj)', function() {
+    const rawObj = {}
+    const arrProxy = reactive([rawObj])
+    expect(arrProxy.includes(rawObj)).toBe(true)
+  });
+
+  it('arrProxy.indexOf/lastIndexOf(rawObj)', function() {
+    const rawObj = {}
+    const arrProxy = reactive([rawObj])
+
+    expect(arrProxy.indexOf(rawObj)).toBe(0)
+    expect(arrProxy.indexOf(arrProxy[0])).toBe(0)
+
+    expect(arrProxy.lastIndexOf(rawObj)).toBe(0)
+    expect(arrProxy.lastIndexOf(arrProxy[0])).toBe(0)
   });
 });
 

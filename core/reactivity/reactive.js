@@ -9,14 +9,20 @@ export let ITERATE_KEY = Symbol()
 const reactiveMap = new Map()
 
 // ================ Start: hack Array methods ================
-const originalMethod = Array.prototype.includes
-const arrayInstrumentations = {
-  includes(key) {
-    // 先查找代理对象，this 是代理对象，因为 arr.includes 的 arr 是代理对象
-    return originalMethod.call(this, key) || originalMethod.call(this.raw, key)
-  }
-}
+const arrayInstrumentations = {}
 
+;['indexOf', 'lastIndexOf', 'includes'].forEach((method) => {
+  const originalMethod = Array.prototype[method]
+  arrayInstrumentations[method] = function(key) {
+    let res = originalMethod.call(this, key)
+    // indexOf 和 lastIndexOf 如果没有查找到，返回值是 -1，includes 是 false
+    if (res === false || res === -1) {
+      res = originalMethod.call(this.raw, key)
+    }
+
+    return res
+  }
+})
 // ================ End: hack Array methods ================
 
 function createReactive(
