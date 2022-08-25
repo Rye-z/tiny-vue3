@@ -52,6 +52,14 @@ describe('watch', function() {
     expect(_newVal).toBe(3)
   });
 
+  it('immediate 立即执行参数', function() {
+    const obj = reactive({ foo: 1, bar: 1 })
+    const cb = jest.fn(() => 1)
+    watch(obj, cb, { immediate: true })
+    expect(cb).toHaveBeenCalledTimes(1)
+    obj.bar++
+  });
+
   // todo
   it('嵌套属性触发回调', function() {
   });
