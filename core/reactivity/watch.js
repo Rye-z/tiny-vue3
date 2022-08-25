@@ -49,9 +49,12 @@ export function watch(source, cb, options = {
       scheduler: job
     }
   )
-  oldVal = runner() // 这里只是执行了 getter 函数，并没有触发 scheduler
 
   if (options.immediate) {
     job()
+  } else {
+    // 手动调用获取初始值 => 执行 getter 函数
+    // 第一次执行的时候，没有旧值，oldVal 是 undefined 符合预期
+    oldVal = runner() // 这里只是执行了 getter 函数，并没有触发 scheduler
   }
 }
