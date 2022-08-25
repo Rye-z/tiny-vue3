@@ -35,9 +35,23 @@ export function watch(source, cb, options = {
   /* 原本是 trigger 时（响应值改变）才会运行 scheduler
   *  所以将 scheduler 的内容单独抽取为一个独立函数，这样可以自由调用
   * */
+  // 用于存储 onInvalidate 的回调函数 => 过期回调
+  let cleanup
+
+  const onInvalidate = (fn) => {
+    cleanup = fn
+  }
+
   const job = () => {
+    // 先执行过期回调
+    // [b]. 第一次触发 watch 因为 cleanup 没有值，所以什么也不会发生
+    //    第二次触发 watch，在 步骤[a] 中已经注册过过期回调，所以这里会执行传入 onInvalidate(fn) 的 fn
+    if (cleanup) {
+      cleanup()
+    }
     newVal = runner()
-    cb(newVal, oldVal)
+    // [a]. 假设 watch 被连续两次触发，第一次触发会通过 onInvalidate 注册【过期回调】
+    cb(newVal, oldVal, onInvalidate)
     oldVal = newVal
   }
 

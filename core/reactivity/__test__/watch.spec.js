@@ -60,6 +60,41 @@ describe('watch', function() {
     obj.bar++
   });
 
+  it('onInvalidate 回调处理竞态问题', async function() {
+    jest.useFakeTimers()
+    let finalData
+    let arr = [1, 2, 3]
+
+    async function sleep(ms) {
+      const result = arr.pop()
+      return new Promise(r => setTimeout(() => r(result), ms))
+    }
+
+    const obj = reactive({ foo: 1, bar: 1 })
+
+    watch(obj, async (newVal, oldVal, onInvalidate) => {
+      let expired = false
+
+      onInvalidate(() => {
+        expired = true // 可以将这段注释，则 finalData 为3
+      })
+
+      const res = await sleep(arr.length * 1000)
+      // res 的返回顺序应该为 1 2 3
+      // 因为 2、3 都已经过期，所以最终的值为 1
+
+      if (!expired) {
+        finalData = res
+        expect(finalData).toBe(1)
+      }
+    })
+
+    obj.foo++
+    obj.foo++
+    obj.foo++
+    jest.runAllTimers()
+  });
+
   // todo
   it('嵌套属性触发回调', function() {
   });
