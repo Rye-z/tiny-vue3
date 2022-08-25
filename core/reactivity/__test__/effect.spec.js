@@ -17,7 +17,7 @@ describe('effect', function() {
     expect(dummy).toBe(8)
   });
 
-  it('分支切换 / 清除遗留富副作用函数', function() {
+  it('分支切换 / 清除遗留副作用函数', function() {
     let text
     const obj = reactive({ ok: true, text: 'hello' })
 
@@ -213,6 +213,16 @@ describe('effect', function() {
     expect(spy).toHaveBeenCalledTimes(1)
     expect(warnMsg).toBe('text is readonly')
     spy.mockRestore()
+  });
+
+  it('arr[index] index >= arr.length 时 ，触发 length 副作用', function() {
+    const arr = reactive([])
+    const fn = jest.fn(() => arr.length)
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    // length: 0 -> 1
+    arr[0] = 1
+    expect(fn).toHaveBeenCalledTimes(2)
   });
 });
 

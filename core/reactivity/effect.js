@@ -69,6 +69,12 @@ export function trigger(target, key, type) {
 
   // 收集当前 obj.key 的deps
   depsToRun.add(deps)
+
+  if (Array.isArray(target) && type === triggerType.ADD) {
+    const lengthDeps = depsMap.get('length')
+    depsToRun.add(lengthDeps)
+  }
+
   // 收集 obj.ITERATE_KEY 的 deps
   if (type === triggerType.ADD || type === triggerType.DELETE) {
     const iterateDeps = depsMap.get(ITERATE_KEY)
