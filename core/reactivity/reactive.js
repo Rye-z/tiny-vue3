@@ -7,11 +7,20 @@ import { equal } from '../utils';
 
 export let ITERATE_KEY = Symbol()
 
-function createReactive(obj, isShallow = false) {
+function createReactive(
+  obj,
+  isShallow = false,
+  isReadonly = false
+) {
   return new Proxy(obj, {
     get(target, key, receiver) {
       if (key === 'raw') {
         return target
+      }
+      // 只读不需要被 track
+      if (!isReadonly) {
+        // 注意 track 的顺序，确保一定会执行
+        track(target, key)
       }
 
       const res = Reflect.get(target, key, receiver)
@@ -19,12 +28,10 @@ function createReactive(obj, isShallow = false) {
       if (isShallow) {
         return res
       }
-
       if (typeof res === 'object' && res !== null) {
-        reactive(res)
+        // 一定要 return!
+        return isReadonly ? readonly(res) : reactive(res)
       }
-
-      track(target, key)
 
       return res
     },
@@ -35,6 +42,11 @@ function createReactive(obj, isShallow = false) {
       return res
     },
     set(target, key, newVal, receiver) {
+      if (isReadonly) {
+        console.warn(`${key} is readonly`)
+        return true
+      }
+
       const oldVal = target[key]
       // 为什么不用 target.hasOwnProperty(key) ??? 这里的 target 必然是原始对象
       const type = target.hasOwnProperty(key)
@@ -65,6 +77,10 @@ function createReactive(obj, isShallow = false) {
       return Reflect.ownKeys(target)
     },
     deleteProperty(target, key) {
+      if (isReadonly) {
+        console.warn(`${key} is readonly`)
+        return true
+      }
       // 检查是否为自身属性
       const hasKey = target.hasOwnProperty(key)
       const res = Reflect.deleteProperty(target, key)
@@ -82,4 +98,12 @@ export function reactive(obj) {
 
 export function shallowReactive(obj) {
   return createReactive(obj, true)
+}
+
+export function readonly(obj) {
+  return createReactive(obj, false, true)
+}
+
+export function shallowReadonly(obj) {
+  return createReactive(obj, true, true)
 }
