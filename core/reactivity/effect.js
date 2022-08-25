@@ -1,3 +1,5 @@
+import { ITERATE_KEY } from './reactive';
+
 let activeEffect = null
 const effectStack = []
 const bucket = new WeakMap()
@@ -51,31 +53,21 @@ export function track(target, key) {
 }
 
 export function trigger(target, key) {
+  const depsToRun = getDepsToRun()
+
   let depsMap = bucket.get(target)
   if (!depsMap) {
     return
   }
   let deps = depsMap.get(key)
-  if (!deps) {
-    return
-  }
-  // 当执行 effect 时，先 cleanUp 遗留的副作用函数，但是执行 effectFn，又会触发属性访问，在遍历的时候又会将 effect 添加到 deps 中
-  // 相当于
-  // set = new Set([1])
-  // set.forEach(item => {
-  //   set.delete(1)
-  //   set.add(1)
-  // })
-  // 使用一个新的 Set 来进行遍历，防止无限循环
-  const depsToRun = new Set()
-  deps.forEach(effect => {
-    // 避免无限递归循环 obj.foo++
-    // 同时 get + set -> 在运行当前 effect 未结束时，又调用了当前 effect
-    if(activeEffect !== effect) {
-      depsToRun.add(effect)
-    }
-  })
-  triggerEffects(depsToRun)
+
+  // 收集当前 obj.key 的deps
+  depsToRun.add(deps)
+  // 收集 obj.ITERATE_KEY 的 deps
+  const iterateDeps = depsMap.get(ITERATE_KEY)
+  depsToRun.add(iterateDeps)
+
+  triggerEffects(depsToRun.effects)
 }
 
 function cleanupEffects(effect) {
@@ -98,5 +90,29 @@ function triggerEffects(deps) {
       effect()
     }
   })
+}
+
+function getDepsToRun(deps) {
+  /* 当执行 effect 时，先 cleanUp 遗留的副作用函数，但是执行 effectFn，又会触发属性访问，在遍历的时候又会将 effect 添加到 deps 中
+     相当于
+     set = new Set([1])
+     set.forEach(item => {
+       set.delete(1)
+       set.add(1)
+     })
+     使用一个新的 Set 来进行遍历，防止无限循环
+   */
+  const effects = new Set()
+  return {
+    effects,
+    add(deps) {
+      deps && deps.forEach(effect => {
+        // 防止嵌套 effect 无限嵌套调用 activeEffect 表示当前正在运行的 effect
+        if (effect !== activeEffect) {
+          effects.add(effect)
+        }
+      })
+    }
+  }
 }
 
