@@ -42,4 +42,19 @@ describe('computed', function() {
     bar.value // 访问 value 触发重新计算
     expect(getter).toHaveBeenCalledTimes(2)
   });
+
+  it('computed 作为 effect 的依赖', function() {
+    const obj = reactive({ foo: 1})
+    const getter = jest.fn(() => obj.foo)
+    const bar = computed(getter)
+
+    const effectFn = jest.fn(() => bar.value)
+    effect(effectFn)
+    expect(effectFn).toHaveBeenCalledTimes(1)
+    expect(getter).toHaveBeenCalledTimes(1)
+    // obj.foo 改变时，应该同时触发 getter 和 effectFn
+    obj.foo++
+    expect(getter).toHaveBeenCalledTimes(2)
+    expect(effectFn).toHaveBeenCalledTimes(2)
+  });
 });

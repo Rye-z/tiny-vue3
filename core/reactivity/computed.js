@@ -1,4 +1,8 @@
-import { effect } from './effect';
+import {
+  effect,
+  track,
+  trigger
+} from './effect';
 
 export function computed(getter) {
   let dirty = true
@@ -11,16 +15,22 @@ export function computed(getter) {
       // 这里 scheduler 中不需要执行 effectFn，因为已经 effect 已经返回了 runner
       // 可以在 get value() 时手动执行
       dirty = true
+      // 触发 getter 执行
+      trigger(obj, 'value')
     }
   })
 
-  return {
+  const obj = {
     get value() {
       if (dirty) {
+        // effect(() => computed(getter).value)
         cache = runner()
+        // 对 'value' 进行 track
+        track(obj,'value')
         dirty = false
       }
       return cache
     }
   }
+  return obj
 }
