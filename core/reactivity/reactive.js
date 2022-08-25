@@ -6,6 +6,7 @@ import {
 import { equal } from '../utils';
 
 export let ITERATE_KEY = Symbol()
+export let shouldTrack = true
 const reactiveMap = new Map()
 
 // ================ Start: hack Array methods ================
@@ -20,6 +21,18 @@ const arrayInstrumentations = {}
       res = originalMethod.call(this.raw, key)
     }
 
+    return res
+  }
+})
+
+;['push', 'pop', 'shift', 'unshift', 'splice'].forEach(method => {
+  const originalMethod = Array.prototype[method]
+  // push 可以传入多个参数，所以使用 ...args 来接收参数，使用 apply 来调用函数
+  arrayInstrumentations[method] = function(...args) {
+    // 在调用原始方法前，禁止追踪
+    shouldTrack = false
+    let res = originalMethod.apply(this.raw, args)
+    shouldTrack = true
     return res
   }
 })

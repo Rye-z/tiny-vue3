@@ -337,6 +337,30 @@ describe('effect', function() {
     expect(arrProxy.lastIndexOf(rawObj)).toBe(0)
     expect(arrProxy.lastIndexOf(arrProxy[0])).toBe(0)
   });
+
+  it('arrProxy.push', function() {
+    /**
+     * arr.push() 会有两步操作：
+     * - 1. 读取 arr.length
+     * - 2. 设置 arr.length
+     * arr.push 可以传多个参数
+     */
+    const arrProxy = reactive([])
+    const fn1 = jest.fn(() => arrProxy.push(1))
+    const fn2 = jest.fn(() => arrProxy.push(2))
+    /**
+     * 这里可能会出现栈溢出的问题
+     * 本质上是两个独立的副作用函数中，对 **同一对象** 的 **同一属性** 在一个函数中进行了 【读】和【写】两个操作
+     * - 因为是同一个属性
+     *   - 读的时候：track(effect)
+     *   - 写的时候：trigger(effect) → 这里会触发另一个副作用函数 → track → trigger
+     * - 等于是当前副作用函数还没执行完，又触发了另一个副作用函数，然后就不停地相互触发
+     */
+    effect(fn1)
+    effect(fn2)
+    expect(fn1).toHaveBeenCalledTimes(1)
+    expect(fn2).toHaveBeenCalledTimes(1)
+  });
 });
 
 describe('scheduler', () => {
