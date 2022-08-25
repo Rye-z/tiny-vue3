@@ -1,7 +1,8 @@
 import {
   reactive,
   readonly,
-  shallowReactive
+  shallowReactive,
+  shallowReadonly
 } from '../reactive.js';
 import { effect } from '../effect';
 
@@ -170,7 +171,7 @@ describe('effect', function() {
   });
 
   it('shallowReactive', function() {
-    const obj = shallowReactive({ foo: {bar: 1}})
+    const obj = shallowReactive({ foo: { bar: 1 } })
     const fn = jest.fn(() => obj.foo.bar)
 
     effect(fn)
@@ -186,7 +187,7 @@ describe('effect', function() {
     spy.mockImplementation((msg) => {
       warnMsg = msg
     })
-    const obj = readonly({ foo: { bar: 1}})
+    const obj = readonly({ foo: { bar: 1 } })
 
     obj.foo.bar++
     expect(obj.foo.bar).toBe(1)
@@ -197,6 +198,21 @@ describe('effect', function() {
   });
 
   it('shallowReadonly', function() {
+    let warnMsg
+    const spy = jest.spyOn(console, 'warn')
+    spy.mockImplementation((msg) => {
+      warnMsg = msg
+    })
+
+    const obj = shallowReadonly({ foo: { bar: 1 }, text: 'John' })
+    obj.foo.bar++
+    expect(obj.foo.bar).toBe(2)
+    obj.text = 'Lily'
+    expect(obj.text).toBe('John')
+
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(warnMsg).toBe('text is readonly')
+    spy.mockRestore()
   });
 });
 
