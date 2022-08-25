@@ -17,14 +17,23 @@ function traverse(value, seen) {
 
 export function watch(source, cb) {
   const seen = new Set()
-  let getter = source
+  let getter
+  let newVal, oldVal
 
-  if (typeof source !== 'function') {
+  if (typeof source === 'function') {
+    getter = source
+  } else {
     getter = traverse(source, seen)
   }
-  effect(getter, {
+
+  // 因为需要获取 getter 函数的返回值，所以设置 lazy，并且手动执行 runner
+  const runner = effect(getter, {
+    lazy: true,
     scheduler() {
-      cb()
+      newVal = runner()
+      cb(newVal, oldVal)
+      oldVal = newVal
     }
   })
+  oldVal = runner()
 }

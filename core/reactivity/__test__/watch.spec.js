@@ -34,6 +34,24 @@ describe('watch', function() {
     expect(cb).toHaveBeenCalledTimes(1)
   });
 
+  it('回调函数可以获取新值和旧值', function() {
+    const obj = reactive({ foo: 1, bar: 1 })
+    let _newVal, _oldVal
+    const cb = jest.fn((newVal, oldVal) => {
+      _newVal = newVal
+      _oldVal = oldVal
+    })
+    const getter = jest.fn(() => obj.foo)
+
+    watch(getter, cb)
+    obj.foo++
+    expect(_oldVal).toBe(1)
+    expect(_newVal).toBe(2)
+    obj.foo++
+    expect(_oldVal).toBe(2)
+    expect(_newVal).toBe(3)
+  });
+
   // todo
   it('嵌套属性触发回调', function() {
   });
