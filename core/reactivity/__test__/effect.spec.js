@@ -434,6 +434,19 @@ describe('effect', function() {
     p.get(key).delete(1)
     expect(fn).toHaveBeenCalledTimes(2)
   });
+
+  it('Map.set 修改值的时候也应该触发 for...in 副作用', function() {
+    // 普通对象的 for...in 只关心键，不关心值，所以只有当新增和删除的时候需要触发
+    // 但是 Map 的 for...in 可以同时遍历键和值，所以值发生改变的时候，也应该触发 for...in 副作用函数
+    const p = reactive(new Map().set('key', 1))
+    const fn = jest.fn(() => {
+      p.forEach((value, _) => value.size)
+    })
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    p.set('key', 2)
+    expect(fn).toHaveBeenCalledTimes(2)
+  });
 });
 
 describe('scheduler', () => {

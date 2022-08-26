@@ -3,7 +3,11 @@ import {
   trigger,
   triggerType
 } from './effect.js';
-import { equal } from '../utils';
+import {
+  equal,
+  isMap,
+  isSet
+} from '../utils';
 
 export let ITERATE_KEY = Symbol()
 export let shouldTrack = true
@@ -73,7 +77,7 @@ const mutableInstrumentations = {
     target.set(key, rawVal)
     // 判断 type
     const type = hasKey ? triggerType.SET : triggerType.ADD
-    // 新值和旧值不同才触发， SET 类型一定是不同的
+    // 新值和旧值不同才触发， ADD 类型一定是不同的：旧值为 undefined
     if (!equal(rawVal, oldVal)) {
       trigger(target, key, type)
     }
@@ -115,7 +119,7 @@ function createReactive(
         return target
       }
       // ================ Start: Set methods ================
-      if (target instanceof Set || target instanceof Map) {
+      if (isSet(target) || isMap(target)) {
         if (key === 'size') {
           track(target, ITERATE_KEY)
           // 因为 Proxy 上没有部署 [[SetData]] 这个内部方法，所以需要将 target 作为 receiver

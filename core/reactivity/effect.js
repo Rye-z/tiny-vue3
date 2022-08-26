@@ -2,6 +2,9 @@ import {
   ITERATE_KEY,
   shouldTrack
 } from './reactive';
+import {
+  isMap,
+} from '../utils';
 
 let activeEffect = null
 const effectStack = []
@@ -100,7 +103,12 @@ export function trigger(target, key, type, newVal) {
   }
 
   // 收集 obj.ITERATE_KEY 的 deps
-  if (type === triggerType.ADD || type === triggerType.DELETE) {
+  if (
+    type === triggerType.ADD
+    || type === triggerType.DELETE
+    || (isMap(target) && type === triggerType.SET)
+  ) {
+    // ADD 或 DELETE 应触发 for...in 副作用
     const iterateDeps = depsMap.get(ITERATE_KEY)
     depsToRun.add(iterateDeps)
   }
