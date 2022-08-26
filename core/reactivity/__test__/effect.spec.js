@@ -368,8 +368,6 @@ describe('effect', function() {
 
     effect(fn)
     expect(fn).toHaveBeenCalledTimes(1)
-    // setProxy.add(4)
-    // expect(fn).toHaveBeenCalledTimes(2)
   });
 
   it('Set.delete', function() {
@@ -379,7 +377,20 @@ describe('effect', function() {
     effect(fn)
     expect(fn).toHaveBeenCalledTimes(1)
     setProxy.delete(1)
-    // expect(fn).toHaveBeenCalledTimes(2)
+  });
+
+  it('add 和 delete 方法应当触发 size 副作用', function() {
+    const setProxy = reactive(new Set([1, 2, 3]))
+    const fn = jest.fn(() => setProxy.size)
+
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+
+    setProxy.add(4)
+    expect(fn).toHaveBeenCalledTimes(2)
+    setProxy.delete(1)
+    expect(fn).toHaveBeenCalledTimes(3)
+
   });
 });
 

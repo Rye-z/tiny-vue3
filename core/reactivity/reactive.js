@@ -38,6 +38,32 @@ const arrayInstrumentations = {}
 })
 // ================ End: hack Array methods ================
 
+// ================ Start: hack Set methods ================
+const mutableInstrumentations = {
+  add(key) {
+    // 调用者是代理对象，所以 this 也就代理对象
+    const target = this.raw
+    const hasKey = target.has(key)
+    const res = target.add(key)
+    if (!hasKey) {
+      // 指定操作类型为 ADD
+      trigger(target, ITERATE_KEY, triggerType.ADD)
+    }
+    return res
+  },
+  delete(key) {
+    const target = this.raw
+    const hasKey = target.has(key)
+    const res = target.delete(key)
+    if (hasKey) {
+      // 指定操作类型为 DELETE
+      trigger(target, ITERATE_KEY, triggerType.DELETE)
+    }
+    return res
+  }
+}
+// ================ End: hack Set methods ================
+
 function createReactive(
   obj,
   isShallow = false,
@@ -48,21 +74,14 @@ function createReactive(
       if (key === 'raw') {
         return target
       }
-      // 1.只读不需要被 track 2. 内建 Symbol 不需要被 track，因为内建 Symbol 一般不需要修改
-      if (!isReadonly && typeof key !== 'symbol') {
-        // 注意 track 的顺序，确保一定会执行
-        track(target, key)
-      }
-
       // ================ Start: Set methods ================
       if (target instanceof Set) {
         if (key === 'size') {
+          track(target, ITERATE_KEY)
           // 因为 Proxy 上没有部署 [[SetData]] 这个内部方法，所以需要将 target 作为 receiver
           return Reflect.get(target, key, target)
         }
-        // setProxy.delete 调用时，receiver 一定是 setProxy，无论怎么修改 receiver 都是无效的
-        // 所以将调用方法和 target 绑定
-        return target[key].bind(target)
+        return mutableInstrumentations[key]
       }
       // ================ End: Set methods ================
 
@@ -75,6 +94,11 @@ function createReactive(
       }
       // ================ End: Array methods ================
 
+      // 1.只读不需要被 track 2. 内建 Symbol 不需要被 track，因为内建 Symbol 一般不需要修改
+      if (!isReadonly && typeof key !== 'symbol') {
+        // 注意 track 的顺序，确保一定会执行
+        track(target, key)
+      }
 
       const res = Reflect.get(target, key, receiver)
 
