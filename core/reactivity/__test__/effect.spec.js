@@ -409,8 +409,8 @@ describe('effect', function() {
     expect(fn).toHaveBeenCalledTimes(1)
   });
 
-  it('Map forEach', function() {
-    const p = reactive(new Map().set(1, 1))
+  it('Map.set 触发 forEach 副作用', function() {
+    const p = reactive(new Map([[{key: 1}, {value: 1}]]))
     const fn = jest.fn(() => {
       p.forEach(i => i)
     })
@@ -418,6 +418,20 @@ describe('effect', function() {
     expect(fn).toHaveBeenCalledTimes(1)
 
     p.set(2, 2)
+    expect(fn).toHaveBeenCalledTimes(2)
+  });
+
+  it('Map forEach 回调函数的参数应自动转为响应式数据', function() {
+    const key = {key: 1}
+    const value = new Set([1, 2, 3])
+    const p = reactive(new Map().set(key, value))
+    const fn = jest.fn(() => {
+      p.forEach((value, _) => value.size)
+    })
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+
+    p.get(key).delete(1)
     expect(fn).toHaveBeenCalledTimes(2)
   });
 });

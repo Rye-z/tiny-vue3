@@ -40,11 +40,27 @@ const arrayInstrumentations = {}
 
 // ================ Start: hack Set methods ================
 // Map 和 Set 的方法大体相似，所以可以放在一起处理
+const wrap = (val) => typeof val === 'object' ? reactive(val) : val
 const mutableInstrumentations = {
-  forEach(callback) {
+  // forEach 接收第二个参数 thisArg
+  forEach(callback, thisArg) {
     const target = this.raw
+    // 通过 wrap 将可代理的值转化为响应式数据
     track(target, ITERATE_KEY)
-    target.forEach(callback)
+    // callback
+    target.forEach((v, k) => {
+      // this 是代理对象
+      callback.call(thisArg, wrap(v), wrap(k), this)
+    })
+  },
+  // Map 和 Set 的 get 和 Object.property 不一样
+  get(key) {
+    const target = this.raw
+    const res = target.get(key)
+    track(target, key)
+    if (res) {
+      return wrap(res)
+    }
   },
   set(key, value) {
     // Map.set 需要区分是 ADD 方法还是 SET 方法 -> 两种不同的触发方式
@@ -85,6 +101,7 @@ const mutableInstrumentations = {
     return res
   }
 }
+
 // ================ End: hack Set methods ================
 
 function createReactive(
@@ -154,7 +171,7 @@ function createReactive(
           - key >= target.length => 会影响数组长度 => ADD 操作
       * */
       const type = Array.isArray(target)
-        ? parseInt(key, 10) < target.length ? triggerType.SET: triggerType.ADD
+        ? parseInt(key, 10) < target.length ? triggerType.SET : triggerType.ADD
         // 为什么不用 target.hasOwnProperty(key) ??? 这里的 target 必然是原始对象
         : target.hasOwnProperty(key) ? triggerType.SET : triggerType.ADD
 
