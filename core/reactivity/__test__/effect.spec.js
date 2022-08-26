@@ -393,7 +393,7 @@ describe('effect', function() {
 
   });
 
-  it('避免数据污染', function() {
+  it('Map 避免数据污染', function() {
     // 数据污染：将响应式数据设置到原始数据上的行为
     const m = new Map()
     const p1 = reactive(m)
@@ -407,6 +407,18 @@ describe('effect', function() {
 
     m.get('p2').set('foo', 1)
     expect(fn).toHaveBeenCalledTimes(1)
+  });
+
+  it('Map forEach', function() {
+    const p = reactive(new Map().set(1, 1))
+    const fn = jest.fn(() => {
+      p.forEach(i => i)
+    })
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+
+    p.set(2, 2)
+    expect(fn).toHaveBeenCalledTimes(2)
   });
 });
 

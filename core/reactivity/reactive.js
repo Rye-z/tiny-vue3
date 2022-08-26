@@ -41,6 +41,11 @@ const arrayInstrumentations = {}
 // ================ Start: hack Set methods ================
 // Map 和 Set 的方法大体相似，所以可以放在一起处理
 const mutableInstrumentations = {
+  forEach(callback) {
+    const target = this.raw
+    track(target, ITERATE_KEY)
+    target.forEach(callback)
+  },
   set(key, value) {
     // Map.set 需要区分是 ADD 方法还是 SET 方法 -> 两种不同的触发方式
     // - ADD => ITERATE_KEY
