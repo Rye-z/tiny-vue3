@@ -392,6 +392,22 @@ describe('effect', function() {
     expect(fn).toHaveBeenCalledTimes(3)
 
   });
+
+  it('避免数据污染', function() {
+    // 数据污染：将响应式数据设置到原始数据上的行为
+    const m = new Map()
+    const p1 = reactive(m)
+    const p2 = reactive(new Map())
+    p1.set('p2', p2)
+    const fn = jest.fn(() => m.get('p2').size)
+
+    // effect 不应该对原始数据监听
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+
+    m.get('p2').set('foo', 1)
+    expect(fn).toHaveBeenCalledTimes(1)
+  });
 });
 
 describe('scheduler', () => {

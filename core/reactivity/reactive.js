@@ -39,7 +39,25 @@ const arrayInstrumentations = {}
 // ================ End: hack Array methods ================
 
 // ================ Start: hack Set methods ================
+// Map 和 Set 的方法大体相似，所以可以放在一起处理
 const mutableInstrumentations = {
+  set(key, value) {
+    // Map.set 需要区分是 ADD 方法还是 SET 方法 -> 两种不同的触发方式
+    // - ADD => ITERATE_KEY
+    const target = this.raw
+    const hasKey = target.has(key)
+    const oldVal = target.get(key)
+    // 防止原始数据污染，需要判断是否将代理对象赋值给了原始值
+    const rawVal = value.raw || value
+    target.set(key, rawVal)
+    // 判断 type
+    const type = hasKey ? triggerType.SET : triggerType.ADD
+    // 新值和旧值不同才触发， SET 类型一定是不同的
+    if (!equal(rawVal, oldVal)) {
+      trigger(target, key, type)
+    }
+
+  },
   add(key) {
     // 调用者是代理对象，所以 this 也就代理对象
     const target = this.raw
@@ -75,7 +93,7 @@ function createReactive(
         return target
       }
       // ================ Start: Set methods ================
-      if (target instanceof Set) {
+      if (target instanceof Set || target instanceof Map) {
         if (key === 'size') {
           track(target, ITERATE_KEY)
           // 因为 Proxy 上没有部署 [[SetData]] 这个内部方法，所以需要将 target 作为 receiver
