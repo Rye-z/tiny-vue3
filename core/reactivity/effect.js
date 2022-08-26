@@ -55,7 +55,7 @@ export function track(target, key) {
    * 需要判断是否存在 activeEffect，只有在设置 effect(fn) 的时候，对应的 activeEffect 才是应该收集的 effectFn
    * 仅仅是属性访问不需要添加副作用函数
    */
-  if (!activeEffect && !shouldTrack) return
+  if (!activeEffect || !shouldTrack) return
 
   deps.add(activeEffect)
   activeEffect.deps.push(deps)

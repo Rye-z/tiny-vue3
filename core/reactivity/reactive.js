@@ -54,12 +54,27 @@ function createReactive(
         track(target, key)
       }
 
+      // ================ Start: Set methods ================
+      if (target instanceof Set) {
+        if (key === 'size') {
+          // 因为 Proxy 上没有部署 [[SetData]] 这个内部方法，所以需要将 target 作为 receiver
+          return Reflect.get(target, key, target)
+        }
+        // setProxy.delete 调用时，receiver 一定是 setProxy，无论怎么修改 receiver 都是无效的
+        // 所以将调用方法和 target 绑定
+        return target[key].bind(target)
+      }
+      // ================ End: Set methods ================
+
+      // ================ Start: Array methods ================
       if (Array.isArray(target)) {
         // arr.includes 会先读取 'includes' 属性
         if (arrayInstrumentations.hasOwnProperty(key)) {
           return Reflect.get(arrayInstrumentations, key, receiver)
         }
       }
+      // ================ End: Array methods ================
+
 
       const res = Reflect.get(target, key, receiver)
 

@@ -361,6 +361,26 @@ describe('effect', function() {
     expect(fn1).toHaveBeenCalledTimes(1)
     expect(fn2).toHaveBeenCalledTimes(1)
   });
+
+  it('Set.size', function() {
+    const setProxy = reactive(new Set([1, 2, 3]))
+    const fn = jest.fn(() => setProxy.size)
+
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    // setProxy.add(4)
+    // expect(fn).toHaveBeenCalledTimes(2)
+  });
+
+  it('Set.delete', function() {
+    const setProxy = reactive(new Set([1, 2, 3]))
+    const fn = jest.fn(() => setProxy.size)
+
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    setProxy.delete(1)
+    // expect(fn).toHaveBeenCalledTimes(2)
+  });
 });
 
 describe('scheduler', () => {
