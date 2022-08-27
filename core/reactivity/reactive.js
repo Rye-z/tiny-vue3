@@ -45,25 +45,32 @@ const arrayInstrumentations = {}
 // ================ Start: hack Set methods ================
 // Map 和 Set 的方法大体相似，所以可以放在一起处理
 const wrap = (val) => typeof val === 'object' ? reactive(val) : val
-const mutableInstrumentations = {
-  [Symbol.iterator]() {
-    const target = this.raw
-    const iterator = target[Symbol.iterator]()
+const iterateMethod = function() {
+  const target = this.raw
+  const iterator = target[Symbol.iterator]()
 
-    track(target, ITERATE_KEY)
+  track(target, ITERATE_KEY)
 
-    // 自定义迭代器
-    return {
-      next() {
-        const { value, done } = iterator.next()
-        return {
-          done,
-          // 对迭代过程中的值进行包装
-          value: value ? [wrap(value[0]), wrap(value[1])] : value
-        }
+  // 自定义迭代器
+  return {
+    // 一个对象可以同时实现 可迭代协议 和 迭代器协议：比如生成器
+    next() {
+      const { value, done } = iterator.next()
+      return {
+        done,
+        // 对迭代过程中的值进行包装
+        value: value ? [wrap(value[0]), wrap(value[1])] : value
       }
+    },
+    // p.entries is not a function or its return value is not iterable
+    [Symbol.iterator]() {
+      return this
     }
-  },
+  }
+}
+const mutableInstrumentations = {
+  [Symbol.iterator]: iterateMethod,
+  entries: iterateMethod,
   // forEach 接收第二个参数 thisArg
   forEach(callback, thisArg) {
     const target = this.raw

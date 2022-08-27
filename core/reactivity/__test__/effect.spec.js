@@ -410,7 +410,7 @@ describe('effect', function() {
   });
 
   it('Map.set 触发 forEach 副作用', function() {
-    const p = reactive(new Map([[{key: 1}, {value: 1}]]))
+    const p = reactive(new Map([[{ key: 1 }, { value: 1 }]]))
     const fn = jest.fn(() => {
       p.forEach(i => i)
     })
@@ -422,7 +422,7 @@ describe('effect', function() {
   });
 
   it('Map forEach 回调函数的参数应自动转为响应式数据', function() {
-    const key = {key: 1}
+    const key = { key: 1 }
     const value = new Set([1, 2, 3])
     const p = reactive(new Map().set(key, value))
     const fn = jest.fn(() => {
@@ -464,19 +464,33 @@ describe('effect', function() {
   });
 
   it('Map for...in 迭代产生的值如果是对象，也应该被代理', function() {
-    const key = { key : 1 }
+    const key = { key: 1 }
     const value = { value: 1 }
     const p = reactive(new Map([
-      [key, value ]
+      [key, value]
     ]))
     const fn = jest.fn(() => {
       for (const [k, v] of p) {
-        expect(k.raw ===key).toBe(true)
+        expect(k.raw === key).toBe(true)
         expect(v.raw === value).toBe(true)
       }
     })
     effect(fn)
     expect(fn).toHaveBeenCalledTimes(1)
+  });
+
+  it('Map.entries', function() {
+    const p = reactive(new Map([['key1', 'value1']]))
+    const fn = jest.fn(() => {
+      for (const [key, value] of p.entries()) {
+        [key, value]
+      }
+    })
+    // p.entries is not a function or its return value is not iterable
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    p.set('key2', 'value2')
+    expect(fn).toHaveBeenCalledTimes(2)
   });
 });
 
