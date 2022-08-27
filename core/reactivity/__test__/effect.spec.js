@@ -492,5 +492,19 @@ describe('effect', function() {
     p.set('key2', 'value2')
     expect(fn).toHaveBeenCalledTimes(2)
   });
+
+  it('Map.values', function() {
+    const p = reactive(new Map([['key1', 'value1']]))
+    const fn = jest.fn(() => {
+      for (const value of p.values()) {
+        value
+      }
+    })
+    // p.entries is not a function or its return value is not iterable
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    p.set('key2', 'value2')
+    expect(fn).toHaveBeenCalledTimes(2)
+  });
 });
 

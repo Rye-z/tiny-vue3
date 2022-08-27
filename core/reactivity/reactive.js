@@ -47,7 +47,11 @@ const arrayInstrumentations = {}
 const wrap = (val) => typeof val === 'object' ? reactive(val) : val
 const iterateMethod = function() {
   const target = this.raw
-  const iterator = target[Symbol.iterator]()
+    /**
+     * Map.entries 通过 target[Symbol.iterator] 获取迭代器对象
+     * Map.values 通过 target.values 获取迭代器对象
+     */
+  const iterator = target[Symbol.iterator]() || target.values()
 
   track(target, ITERATE_KEY)
 
@@ -59,7 +63,14 @@ const iterateMethod = function() {
       return {
         done,
         // 对迭代过程中的值进行包装
-        value: value ? [wrap(value[0]), wrap(value[1])] : value
+        value: value
+          ? (
+            value.length === 2
+              ? [wrap(value[0]), wrap(value[1])]
+              // values 只有一个值
+              : wrap(value)
+          )
+          : value
       }
     },
     // p.entries is not a function or its return value is not iterable
@@ -71,6 +82,7 @@ const iterateMethod = function() {
 const mutableInstrumentations = {
   [Symbol.iterator]: iterateMethod,
   entries: iterateMethod,
+  values: iterateMethod,
   // forEach 接收第二个参数 thisArg
   forEach(callback, thisArg) {
     const target = this.raw
