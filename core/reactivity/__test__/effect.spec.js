@@ -486,6 +486,45 @@ describe('effect', function() {
     expect(fn).toHaveBeenCalledTimes(1)
   });
 
+  it('Map for...of 迭代产生的代理对象被修改时，应触发 for...of 副作用', function() {
+    const key = { key: 1 }
+    const key2 = { key2 : 2}
+    const mapValue = new Map().set('bar', 1)
+    const objValue = { foo: 1}
+    const p = reactive(new Map([
+      [key, mapValue],
+      [key2, objValue]
+    ]))
+    const fn = jest.fn(() => {
+      for (const [k, v] of p) {
+        [k, v.foo || v.get('bar')]
+      }
+    })
+
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    p.get(key2)['foo'] = 2
+    expect(fn).toHaveBeenCalledTimes(2)
+    p.get(key).set('bar', 2)
+    expect(fn).toHaveBeenCalledTimes(3)
+    // 修改相同的值，不触发副作用
+    p.get(key).set('bar', 2)
+    expect(fn).toHaveBeenCalledTimes(3)
+
+    /**
+     * 需要理解一点：当执行 effect(fn) 时，activeEffect 就是 fn
+     * 所以此时所有的 track 操作都会将 activeEffect 收集为依赖，
+     * 上面代码中的依赖关系为
+     * - targetMap
+     *   - p
+     *     - ITERATE_KEY -> fn
+     *   - mapValue
+     *     - foo -> fn
+     *   - objValue
+     *     - bar -> fn
+     */
+  });
+
   it('Map.entries', function() {
     const p = reactive(new Map([['key1', 'value1']]))
     const fn = jest.fn(() => {
@@ -529,5 +568,23 @@ describe('effect', function() {
     p.set('key1', 'changed')
     expect(fn).toHaveBeenCalledTimes(2)
   });
+  /**
+   * 1.for...in 遍历对象 和 forEach 遍历集合 之间存在本质的不同：
+   *   - for...in 只关心对象的键，而不关心值，所以只有在 【新增键】或者【删除键】的时候需要触发 effect
+   * 2. forEach 遍历集合的时候分情况：
+   *   - Set 只关心值
+   *     - add / delete => 任何影响到 Set.size 的操作
+   *   - Map 既关心值也关心键
+   *     - Map 的键可以是对象，所以 Map 的键值改变都应该触发 effect
+   * 3.for…of 本质上是读取 [Symbol.iterator] 来进行遍历
+   *   - Map.keys() / Map.values() / Map.entries() 都是在获取 [Symbol.iterator] 进行遍历的
+   *     - Map.keys 当键改变时应触发副作用
+   *       - key 为 引用类型 → 引用未变，但引用值变了
+   *       - add/delete
+   *     - Map.values 仅当值改变
+   *       - value 为 引用类型 → 引用未变，但引用值变了
+   *       - Map.set(oldVal, newVal) ，oldVal !== newVal
+   *     - Map.entries 结合上面两个
+   */
 });
 
