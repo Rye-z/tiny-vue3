@@ -4,6 +4,26 @@ export function isRef(value) {
   return !!value._v_isRef
 }
 
+export function proxyRefs(obj) {
+  return new Proxy(obj, {
+    get(target, key, receiver) {
+      const res = Reflect.get(target, key, receiver)
+      // 自动脱 ref 实现
+      return res._v_isRef ? res.value : res
+    },
+    set(target, key, val, receiver) {
+      const value = target[key]
+      // 这里需要区分 value 是 ref 还是普通值
+      if (value._v_isRef) {
+        // 如果是 ref，需要通过 ref.value 来修改值
+        value.value = val
+        return true
+      }
+      return Reflect.set(target, key, val, receiver)
+    }
+  })
+}
+
 export function toRefs(obj) {
   const refs = {}
   for (const k in obj) {

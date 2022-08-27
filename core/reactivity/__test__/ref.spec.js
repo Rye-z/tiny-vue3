@@ -1,5 +1,6 @@
 import {
   isRef,
+  proxyRefs,
   ref,
   toRef,
   toRefs
@@ -55,6 +56,23 @@ describe('ref', function() {
     expect(fn).toHaveBeenCalledTimes(1)
     newObj.a.value++
     expect(fn).toHaveBeenCalledTimes(2)
+  });
 
+  it('proxyRefs', function() {
+    // 在 Vue 模板中，自动脱 ref：不需要使用 .value 来访问
+    // 用户也不用考虑哪些是 ref，哪些是 reactive，从而降低用户的心智负担
+    // Vue.js 组件中的 setup 函数所返回的数据会传递给 proxyRefs 函数进行处理
+    const obj = reactive({ a: 1, b: 2 })
+    const newObj = proxyRefs({...toRefs(obj)})
+
+    const fn = jest.fn(() => newObj.a)
+
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+
+    expect(newObj.a).toBe(1)
+    newObj.a++
+    expect(newObj.a).toBe(2)
+    expect(fn).toHaveBeenCalledTimes(2)
   });
 });
