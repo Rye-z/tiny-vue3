@@ -4,6 +4,7 @@ import {
   triggerType
 } from './effect.js';
 import {
+  convert,
   equal,
   isMap,
   isSet
@@ -47,8 +48,6 @@ const arrayInstrumentations = {}
 let _mutableMethodName
 
 // Map 和 Set 的方法大体相似，所以可以放在一起处理
-const wrap = (val) => typeof val === 'object' ? reactive(val) : val
-
 function iterateMethod() {
   const target = this.raw
   /**
@@ -82,9 +81,9 @@ function iterateMethod() {
         value: value
           ? (
             value.length === 2
-              ? [wrap(value[0]), wrap(value[1])]
+              ? [convert(value[0]), convert(value[1])]
               // values 只有一个值
-              : wrap(value)
+              : convert(value)
           )
           : value
       }
@@ -109,7 +108,7 @@ const mutableInstrumentations = {
     // callback
     target.forEach((v, k) => {
       // this 是代理对象
-      callback.call(thisArg, wrap(v), wrap(k), this)
+      callback.call(thisArg, convert(v), convert(k), this)
     })
   },
   // Map 和 Set 的 get 和 Object.property 不一样
@@ -118,7 +117,7 @@ const mutableInstrumentations = {
     const res = target.get(key)
     track(target, key)
     if (res) {
-      return wrap(res)
+      return convert(res)
     }
   },
   set(key, value) {
