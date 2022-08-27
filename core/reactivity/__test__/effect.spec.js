@@ -513,7 +513,7 @@ describe('effect', function() {
 
     /**
      * 需要理解一点：当执行 effect(fn) 时，activeEffect 就是 fn
-     * 所以此时所有的 track 操作都会将 activeEffect 收集为依赖，
+     * 此时 effect 中触发的所有 track 操作都会将 activeEffect 收集为依赖，
      * 上面代码中的依赖关系为
      * - targetMap
      *   - p

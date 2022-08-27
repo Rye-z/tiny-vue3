@@ -44,16 +44,19 @@ const arrayInstrumentations = {}
 // ================ End: hack Array methods ================
 
 // ================ Start: hack Set methods ================
+let _mutableMethodName
+
 // Map 和 Set 的方法大体相似，所以可以放在一起处理
 const wrap = (val) => typeof val === 'object' ? reactive(val) : val
+
 function iterateMethod() {
   const target = this.raw
-    /**
-     * 获取迭代器对象
-     * - Map.entries 等价于 target[Symbol.iterator]
-     * - Map.values 通过 target.values 获取迭代器对象
-     * - Map.keys 通过 target.keys 获取迭代器对象
-     */
+  /**
+   * 获取迭代器对象
+   * - Map.entries 等价于 target[Symbol.iterator]
+   * - Map.values 通过 target.values 获取迭代器对象
+   * - Map.keys 通过 target.keys 获取迭代器对象
+   */
   const iterator = target[_mutableMethodName]()
 
   /**
@@ -92,6 +95,7 @@ function iterateMethod() {
     }
   }
 }
+
 const mutableInstrumentations = {
   [Symbol.iterator]: iterateMethod,
   entries: iterateMethod,
@@ -157,7 +161,6 @@ const mutableInstrumentations = {
   }
 }
 
-let _mutableMethodName
 // ================ End: hack Set methods ================
 
 function createReactive(
