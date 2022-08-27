@@ -1,22 +1,28 @@
+import { reactive } from '../reactive';
+import { effect } from '../effect';
+
 describe('scheduler', () => {
-  it('使用 scheduler 控制调度时机', function() {
-    jest.useFakeTimers()
-    const obj = reactive({ foo: 1 })
-    let bar
+  it(
+    '使用 scheduler 控制调度时机',
+    function() {
+      jest.useFakeTimers()
+      const obj = reactive({ foo: 1 })
+      let bar
 
-    effect(() => {
-      bar = obj.foo
-    }, {
-      scheduler(fn) {
-        setTimeout(fn)
-      }
-    })
-    obj.foo = 0
+      effect(() => {
+        bar = obj.foo
+      }, {
+        scheduler(fn) {
+          setTimeout(fn)
+        }
+      })
+      obj.foo = 0
 
-    bar = 3
-    jest.runAllTimers()
-    expect(bar).toBe(0)
-  });
+      bar = 3
+      jest.runAllTimers()
+      expect(bar).toBe(0)
+    }
+  );
 
   it('连续多次修改响应式数据，只触发一次更新', async function() {
     // 创建一个 promise 实例，利用它将一个微任务添加到微任务队列

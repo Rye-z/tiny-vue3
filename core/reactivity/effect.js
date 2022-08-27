@@ -55,14 +55,8 @@ export function track(target, key) {
   if (!deps) {
     depsMap.set(key, deps = new Set())
   }
-  /**
-   * 需要判断是否存在 activeEffect，只有在设置 effect(fn) 的时候，对应的 activeEffect 才是应该收集的 effectFn
-   * 仅仅是属性访问不需要添加副作用函数
-   */
-  if (!activeEffect || !shouldTrack) return
 
-  deps.add(activeEffect)
-  activeEffect.deps.push(deps)
+  trackEffects(deps)
 }
 
 export function trigger(target, key, type, newVal) {
@@ -125,6 +119,18 @@ export function trigger(target, key, type, newVal) {
   }
 
   triggerEffects(depsToRun.effects)
+}
+
+export function trackEffects(deps) {
+  /**
+   * 需要判断是否存在 activeEffect，只有在设置 effect(fn) 的时候，对应的 activeEffect 才是应该收集的 effectFn
+   * 仅仅是属性访问不需要添加副作用函数
+   */
+  if (!activeEffect || !shouldTrack) return
+  if (deps.has(activeEffect)) return
+
+  deps.add(activeEffect)
+  activeEffect.deps.push(deps)
 }
 
 function cleanupEffects(effect) {
