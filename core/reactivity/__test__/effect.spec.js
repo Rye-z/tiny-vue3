@@ -435,12 +435,19 @@ describe('effect', function() {
     expect(fn).toHaveBeenCalledTimes(2)
   });
 
-  it('Map.set 修改值的时候也应该触发 for...in 副作用', function() {
-    // 普通对象的 for...in 只关心键，不关心值，所以只有当新增和删除的时候需要触发
-    // 但是 Map 的 for...in 可以同时遍历键和值，所以值发生改变的时候，也应该触发 for...in 副作用函数
+  it('Map.set 修改值的时候也应该触发 forEach 副作用', function() {
+    /**
+     * for...in 遍历对象 和 forEach 遍历集合 之间存在本质的不同：
+     * - for...in 只关心对象的键，而不关心值，所以只有在 【新增键】或者【删除键】的时候需要触发 effect
+     * - forEach 遍历集合的时候分情况：
+     *    - Set 只有值
+     *      - add / delete => 任何影响到 Set.size 的操作
+     *    - Map 既有值也有键
+     *      - Map 的键可以是对象，所以 Map 的键值改变都应该触发 effect
+     */
     const p = reactive(new Map().set('key', 1))
     const fn = jest.fn(() => {
-      p.forEach((value, _) => value.size)
+      p.forEach((value, key) => [key, value])
     })
     effect(fn)
     expect(fn).toHaveBeenCalledTimes(1)
@@ -463,7 +470,7 @@ describe('effect', function() {
     expect(fn).toHaveBeenCalledTimes(2)
   });
 
-  it('Map for...in 迭代产生的值如果是对象，也应该被代理', function() {
+  it('Map for...of 迭代产生的值如果是对象，也应该被代理', function() {
     const key = { key: 1 }
     const value = { value: 1 }
     const p = reactive(new Map([
@@ -500,10 +507,26 @@ describe('effect', function() {
         value
       }
     })
-    // p.entries is not a function or its return value is not iterable
     effect(fn)
     expect(fn).toHaveBeenCalledTimes(1)
     p.set('key2', 'value2')
+    expect(fn).toHaveBeenCalledTimes(2)
+  });
+
+  it('Map.keys', function() {
+    const p = reactive(new Map([['key1', 'value1']]))
+    const fn = jest.fn(() => {
+      for (const key of p.keys()) {
+        key
+      }
+    })
+
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    p.set('key2', 'value2')
+    expect(fn).toHaveBeenCalledTimes(2)
+    // 对于 p.keys() 来说，p.set() 没有修改 key 的值，理论上来说副作用函数不应触发
+    p.set('key1', 'changed')
     expect(fn).toHaveBeenCalledTimes(2)
   });
 });

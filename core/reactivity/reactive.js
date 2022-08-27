@@ -10,6 +10,7 @@ import {
 } from '../utils';
 
 export let ITERATE_KEY = Symbol()
+export let MAP_KEY_ITERATE_KEY = Symbol()
 export let shouldTrack = true
 const reactiveMap = new Map()
 
@@ -45,15 +46,27 @@ const arrayInstrumentations = {}
 // ================ Start: hack Set methods ================
 // Map 和 Set 的方法大体相似，所以可以放在一起处理
 const wrap = (val) => typeof val === 'object' ? reactive(val) : val
-const iterateMethod = function() {
+function iterateMethod() {
   const target = this.raw
     /**
-     * Map.entries 通过 target[Symbol.iterator] 获取迭代器对象
-     * Map.values 通过 target.values 获取迭代器对象
+     * 获取迭代器对象
+     * - Map.entries 等价于 target[Symbol.iterator]
+     * - Map.values 通过 target.values 获取迭代器对象
+     * - Map.keys 通过 target.keys 获取迭代器对象
      */
-  const iterator = target[Symbol.iterator]() || target.values()
+  const iterator = target[_mutableMethodName]()
 
-  track(target, ITERATE_KEY)
+  /**
+   * 依赖收集分离
+   * - values/entries 通过 ITERATE_KEY 收集依赖
+   * - keys 通过 MAP_KEY_ITERATE_KEY 收集依赖
+   *    - Map.set(k, v)，k 是不变的，不应该触发 Map.keys 的 effect
+   */
+  if (_mutableMethodName === 'keys') {
+    track(target, MAP_KEY_ITERATE_KEY)
+  } else {
+    track(target, ITERATE_KEY)
+  }
 
   // 自定义迭代器
   return {
@@ -83,6 +96,7 @@ const mutableInstrumentations = {
   [Symbol.iterator]: iterateMethod,
   entries: iterateMethod,
   values: iterateMethod,
+  keys: iterateMethod,
   // forEach 接收第二个参数 thisArg
   forEach(callback, thisArg) {
     const target = this.raw
@@ -143,6 +157,7 @@ const mutableInstrumentations = {
   }
 }
 
+let _mutableMethodName
 // ================ End: hack Set methods ================
 
 function createReactive(
@@ -155,16 +170,17 @@ function createReactive(
       if (key === 'raw') {
         return target
       }
-      // ================ Start: Set methods ================
+      // ================ Start: Set/Map methods ================
       if (isSet(target) || isMap(target)) {
         if (key === 'size') {
           track(target, ITERATE_KEY)
           // 因为 Proxy 上没有部署 [[SetData]] 这个内部方法，所以需要将 target 作为 receiver
           return Reflect.get(target, key, target)
         }
+        _mutableMethodName = key
         return mutableInstrumentations[key]
       }
-      // ================ End: Set methods ================
+      // ================ End: Set/Map methods ================
 
       // ================ Start: Array methods ================
       if (Array.isArray(target)) {

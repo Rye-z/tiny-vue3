@@ -1,5 +1,6 @@
 import {
   ITERATE_KEY,
+  MAP_KEY_ITERATE_KEY,
   shouldTrack
 } from './reactive';
 import {
@@ -106,11 +107,21 @@ export function trigger(target, key, type, newVal) {
   if (
     type === triggerType.ADD
     || type === triggerType.DELETE
+    // Map.set 应触发 for...of / entries / values 副作用
     || (isMap(target) && type === triggerType.SET)
   ) {
     // ADD 或 DELETE 应触发 for...in 副作用
     const iterateDeps = depsMap.get(ITERATE_KEY)
     depsToRun.add(iterateDeps)
+  }
+
+  if (
+    // Map.set 和 Map.delete 会影响 Map.keys，因为对 key 产生了影响
+    (type === triggerType.ADD || type === triggerType.DELETE)
+    && (isMap(target))
+  ) {
+    const mapKeyIterateDeps = depsMap.get(MAP_KEY_ITERATE_KEY)
+    depsToRun.add(mapKeyIterateDeps)
   }
 
   triggerEffects(depsToRun.effects)
