@@ -46,6 +46,12 @@ const arrayInstrumentations = {}
 // Map 和 Set 的方法大体相似，所以可以放在一起处理
 const wrap = (val) => typeof val === 'object' ? reactive(val) : val
 const mutableInstrumentations = {
+  [Symbol.iterator]() {
+    const target = this.raw
+    const iterator = target[Symbol.iterator]()
+    track(target, ITERATE_KEY)
+    return iterator
+  },
   // forEach 接收第二个参数 thisArg
   forEach(callback, thisArg) {
     const target = this.raw
@@ -194,7 +200,11 @@ function createReactive(
 
       return res
     },
-    // 拦截 `for...in`
+    /**
+     * 拦截 `for...in`
+     * 因为 for...in 操作其中有一步是通过 Reflect.ownKeys() 来获取对象自身拥有的
+     * 然后通过迭代器 GetV(iterator, 'next')
+     */
     ownKeys(target) {
       if (Array.isArray(target)) {
         // 当数组 length 改变，会影响到 for...in 操作
