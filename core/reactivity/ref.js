@@ -1,19 +1,23 @@
 import { reactive } from './reactive';
-import {
-  track,
-  trigger
-} from './effect';
+
+export function isRef(value) {
+  return !!value._v_isRef
+}
 
 export function ref(value) {
-  const wrapper = reactive({ value })
-
-  return {
+  const wrapper = {
     get value() {
-      return wrapper.value
+      return value
     },
     set value(val) {
-      wrapper.value = val
+      value = val
     }
   }
+  Object.defineProperty(wrapper, '_v_isRef', {
+    // 默认 enumerable: false
+    value: true
+  })
+
+  return reactive(wrapper)
 
 }
