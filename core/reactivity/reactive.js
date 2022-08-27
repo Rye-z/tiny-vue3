@@ -49,8 +49,20 @@ const mutableInstrumentations = {
   [Symbol.iterator]() {
     const target = this.raw
     const iterator = target[Symbol.iterator]()
+
     track(target, ITERATE_KEY)
-    return iterator
+
+    // 自定义迭代器
+    return {
+      next() {
+        const { value, done } = iterator.next()
+        return {
+          done,
+          // 对迭代过程中的值进行包装
+          value: value ? [wrap(value[0]), wrap(value[1])] : value
+        }
+      }
+    }
   },
   // forEach 接收第二个参数 thisArg
   forEach(callback, thisArg) {
