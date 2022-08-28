@@ -2,7 +2,7 @@ import {
   track,
   trigger,
   triggerType
-} from './effect.js';
+} from './effect';
 import {
   convert,
   equal,
