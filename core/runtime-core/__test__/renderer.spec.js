@@ -106,4 +106,31 @@ describe('renderer', function() {
     domRenderer.render(button3, root3)
     expect(root3.innerHTML).toBe('<button disabled=\"\"></button>')
   });
+
+  it('只读属性应当被正确渲染', function() {
+    const root = document.createElement('div')
+    const vnode = {
+      type: 'div',
+      children: [
+        {
+          type: 'form',
+          props: {
+            id: 'form1'
+          },
+          children: []
+        },
+        {
+          type: 'input',
+          props: {
+            form: 'form1'
+          },
+          children: []
+        }
+      ]
+    }
+    // el.form 是只读的只能通过 setAttribute 函数来设置
+    // TypeError: Cannot set property form of [object HTMLInputElement] which has only a getter
+    domRenderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<div><form id="form1"></form><input form="form1"></div>')
+  });
 });
