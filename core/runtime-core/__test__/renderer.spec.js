@@ -172,4 +172,8 @@ describe('renderer', function() {
     domRenderer.render(null, root)
     expect(root.innerHTML).toBe('')
   });
+
+  it('事件的处理', function() {
+    // 见 test_onclick.html
+  });
 });

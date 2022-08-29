@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>onclick test</title>
+</head>
+<body>
+	<div id="foo"></div>
+</body>
+<script type="module">
+	import { domRenderer } from '../renderers.js';
+
+  const root = document.getElementById('foo')
+  const vnode = {
+    type: 'button',
+    props: {
+      id: 'foo',
+      onClick: () => alert('click'),
+    }
+  }
+  domRenderer.render(vnode, root)
+</script>
+</html>

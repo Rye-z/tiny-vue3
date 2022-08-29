@@ -9,6 +9,27 @@ function shouldSetAsProps(key, el, nextValue) {
   return key in el
 }
 
+function handleEvent(el, key, eventCallback) {
+  // el 缓存了 eventCallback
+  let invoker = el._vei // _vei -> vue event invoker
+  const name = key.slice(2).toLowerCase()
+
+  // 如果传入了新的绑定事件
+  if (eventCallback) {
+    // 如果 invoker 不存在
+    if (!invoker) {
+      invoker = el._vei = (e) => invoker.value(e)
+      invoker.value = eventCallback
+      el.addEventListener(name, eventCallback)
+    } else {
+      // 新的绑定函数不存在，但是旧的函数存在，则移除事件
+      invoker.value = eventCallback
+    }
+  } else if(invoker) {
+    el.removeEventListener(name, invoker)
+  }
+}
+
 
 export const customRenderer = createRenderer({
   createElement(tag) {
@@ -39,16 +60,18 @@ export const domRenderer = createRenderer({
    * @param nextValue 需要设置的值
    */
   patchProps(el, key, preValue, nextValue) {
-    /**
-     * HTML Attributes 的作用是设置与之对应的 DOM Properties 的初始值
-     * 判断 key 是否存在对应的 DOM Properties
-     * -> div 就没有 input 的 form 属性
-     */
-    if (shouldSetAsProps(key, el, nextValue)) {
+    // 处理事件
+    if (/^on/.test(key)) {
+      handleEvent(el, key, nextValue)
+    } else if (key === 'class') {
       // 对 class 进行特殊处理，使用 el.className 设置是性能最高的方式
-      if (key === 'class') {
-        el.className = nextValue
-      }
+      el.className = nextValue
+      /**
+       * HTML Attributes 的作用是设置与之对应的 DOM Properties 的初始值
+       * 判断 key 是否存在对应的 DOM Properties
+       * -> div 就没有 input 的 form 属性
+       */
+    } else if (shouldSetAsProps(key, el, nextValue)) {
       /**
        * 获取节点类型
        * typeof button['disabled'] === 'boolean'
