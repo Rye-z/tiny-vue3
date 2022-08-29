@@ -1,4 +1,4 @@
-import { createRenderer } from './index';
+import { createRenderer } from './index.js';
 
 export const customRenderer = createRenderer({
   createElement(tag) {
