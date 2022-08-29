@@ -9,23 +9,26 @@ function shouldSetAsProps(key, el, nextValue) {
   return key in el
 }
 
-function handleEvent(el, key, eventCallback) {
+function handleEvent(el, key, eventCallback, invoker) {
   // el 缓存了 eventCallback
-  let invoker = el._vei // _vei -> vue event invoker
   const name = key.slice(2).toLowerCase()
 
   // 如果传入了新的绑定事件
   if (eventCallback) {
-    // 如果 invoker 不存在
+    // 1. 如果 invoker 不存在，则初始化 invoker，并且将 invoker 缓存到 el._vei 中
+    // 2. 绑定事件名以及回调
     if (!invoker) {
-      invoker = el._vei = (e) => invoker.value(e)
+      invoker = el._vei[key] = (e) => invoker.value(e)
       invoker.value = eventCallback
       el.addEventListener(name, eventCallback)
     } else {
-      // 新的绑定函数不存在，但是旧的函数存在，则移除事件
+      // 如果 invoker 已经存在，则只需要将 eventCallback 替换即可，不需要移除绑定事件
+      // - 原本 addEventListener: click - eventCallback
+      // - 现在 addEventListener: click - invoker.value - eventCallback
       invoker.value = eventCallback
     }
   } else if(invoker) {
+    // 新的绑定函数不存在，但是旧的函数存在，则移除事件
     el.removeEventListener(name, invoker)
   }
 }
@@ -62,7 +65,9 @@ export const domRenderer = createRenderer({
   patchProps(el, key, preValue, nextValue) {
     // 处理事件
     if (/^on/.test(key)) {
-      handleEvent(el, key, nextValue)
+      let invokers = el._vei || (el._vei = {})
+      const invoker = invokers[key]
+      handleEvent(el, key, nextValue, invoker)
     } else if (key === 'class') {
       // 对 class 进行特殊处理，使用 el.className 设置是性能最高的方式
       el.className = nextValue
