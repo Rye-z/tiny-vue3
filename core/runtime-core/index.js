@@ -1,10 +1,15 @@
-export function createRenderer() {
+export function createRenderer(options) {
   /**
    * 渲染器的核心入口
    * @param n1 旧 vnode
    * @param n2 新 vnode
    * @param container 容器对象
    */
+  const {
+    createElement,
+    insert,
+    setElement
+  } = options
   function patch(n1, n2, container) {
     if(!n1) {
       mountElement(n2, container)
@@ -23,13 +28,13 @@ export function createRenderer() {
    */
   function mountElement(vnode, container) {
     // 创建 DOM 元素
-    const el = document.createElement(vnode.type)
+    const el = createElement(vnode.type)
     // 处理子节点，如果子节点是字符串，代表元素具有文本节点
     if (typeof vnode.children === 'string') {
-      el.textContent = vnode.children
+      setElement(el, vnode.children)
     }
     // 将元素添加到容器内
-    container.appendChild(el)
+    insert(el, container)
   }
 
   function render(vnode, container) {
