@@ -13,10 +13,24 @@ export function createRenderer(options) {
   } = options
 
   function patch(n1, n2, container) {
-    if (!n1) {
-      mountElement(n2, container)
-    } else {
-      // n1 存在，意味着打补丁
+    // 不同 type 的元素之间，可能属性是不同的，所以不存在打补丁的意义
+    if(n1 && n1.type !== n2.type) {
+      unmount(n1)
+      // 将 n1 设为 null，保证后续挂载操作正确执行
+      n1 = null
+    }
+    const {type} = n2
+    if (typeof type === 'string') {
+      if (!n1) {
+        mountElement(n2, container)
+      } else {
+        // todo
+        patchElement(n1, n2)
+      }
+    } else if (type === 'object') {
+      // vnode 类型为 object，表示描述的是组件
+    } else if( type === '') {
+      // 其他
     }
   }
 
