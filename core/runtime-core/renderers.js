@@ -40,8 +40,13 @@ export const domRenderer = createRenderer({
   patchProps(el, key, preValue, nextValue) {
     // 处理事件
     if (/^on/.test(key)) {
+      if (preValue === nextValue) {
+        return
+      }
+
       let invokers = el._vei || (el._vei = {})
       let invoker = invokers[key]
+
       const name = key.slice(2).toLowerCase()
 
       // 如果传入了新的绑定事件
@@ -67,6 +72,7 @@ export const domRenderer = createRenderer({
           // 如果 invoker 已经存在，则只需要将 eventCallback 替换即可，不需要移除绑定事件
           // - 原本 addEventListener: click - eventCallback
           // - 现在 addEventListener: click - invoker.value - eventCallback
+          invoker.attached = performance.now()
           invoker.value = nextValue
         }
       } else if(invoker) {
