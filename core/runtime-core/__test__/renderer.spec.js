@@ -134,7 +134,7 @@ describe('renderer', function() {
     expect(root.innerHTML).toBe('<div><form id="form1"></form><input form="form1"></div>')
   });
 
-  describe('class', function() {
+  it('class', function() {
     /**
      * Vue.js 中有三种方式设置 class
      * - 设置字符串
@@ -148,8 +148,14 @@ describe('renderer', function() {
      * - el.setAttribute
      * - el.classList
      */
-    it('class', function() {
-
-    });
+    const root = document.createElement('div')
+    const vnode = {
+      type: 'div',
+      props: {
+        class: "foo bar baz"
+      }
+    }
+    domRenderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<div class="foo bar baz"></div>')
   });
 });

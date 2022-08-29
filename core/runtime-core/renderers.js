@@ -45,6 +45,10 @@ export const domRenderer = createRenderer({
      * -> div 就没有 input 的 form 属性
      */
     if (shouldSetAsProps(key, el, nextValue)) {
+      // 对 class 进行特殊处理，使用 el.className 设置是性能最高的方式
+      if (key === 'class') {
+        el.className = nextValue
+      }
       /**
        * 获取节点类型
        * typeof button['disabled'] === 'boolean'
