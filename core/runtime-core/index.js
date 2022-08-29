@@ -1,10 +1,4 @@
 export function createRenderer(options) {
-  /**
-   * 渲染器的核心入口
-   * @param n1 旧 vnode
-   * @param n2 新 vnode
-   * @param container 容器对象
-   */
   const {
     createElement,
     insert,
@@ -12,6 +6,75 @@ export function createRenderer(options) {
     patchProps
   } = options
 
+  /**
+   * @param n1 旧节点
+   * @param n2 新节点
+   * @param container 父节点
+   */
+  function patchChildren(n1, n2, container) {
+    // a. 新节点为文本元素
+    if (typeof n2.children === 'string') {
+      // 旧子节点的类型有三种可能：没有子节点、文本子节点以及一组子节点
+      // 只有当旧子节点为一组子节点时，才需要逐个卸载，其他情况下什么都不需要做
+      if (Array.isArray(n1.children)) {
+        n1.children.forEach(c => unmount(c))
+      }
+      setElement(container, n2.children)
+    }
+    // b. 新子节点为数组
+    else if(Array.isArray(n2.children)) {
+      // 判断旧节点是否也是一组数组
+      if (Array.isArray(n1.children)) {
+        // todo diff 算法
+        n1.children.forEach(c => unmount(c))
+        n1.children.forEach(c => patch(null, c, container))
+      } else {
+        // 此时，旧节点要么是 1. 文本节点，2.null
+        // 只需要将旧节点清空，然后再逐个挂载
+        setElement(container, '')
+        n1.children.forEach(c => patch(null, c, container))
+      }
+    }
+    // c. 新子节点不存在
+    else {
+      if (Array.isArray(n1.children)) {
+        n1.children.forEach(c => unmount(c))
+      } else if (typeof n1.children === 'string') {
+        setElement(container, '')
+      }
+    }
+  }
+
+  /**
+   * @param n1 旧节点
+   * @param n2 新节点
+   */
+  function patchElement(n1, n2) {
+    const el = n2.el = n1.el
+    const oldProps = n1.props
+    const newProps = n2.props
+
+    // 更新 props
+    for (const key in newProps) {
+      if (newProps[key] !== oldProps[key]) {
+        patchProps(el, key, oldProps[key], newProps[key])
+      }
+    }
+    for (const key in oldProps) {
+      if(!(key in newProps)) {
+        patchProps(el, key, oldProps[key], null)
+      }
+    }
+    // 更新 children
+    patchChildren(n1, n2, el)
+  }
+
+  /**
+   * "打补丁"
+   * @param n1 旧节点
+   * @param n2 新节点
+   * @param container
+   */
   function patch(n1, n2, container) {
     // 不同 type 的元素之间，可能属性是不同的，所以不存在打补丁的意义
     if(n1 && n1.type !== n2.type) {
@@ -19,12 +82,15 @@ export function createRenderer(options) {
       // 将 n1 设为 null，保证后续挂载操作正确执行
       n1 = null
     }
+
     const {type} = n2
+
     if (typeof type === 'string') {
+      // 如果没有旧节点，说明还没有挂载 => 执行挂载操作
       if (!n1) {
         mountElement(n2, container)
       } else {
-        // todo
+        // 旧节点存在，执行 “打补丁” 操作
         patchElement(n1, n2)
       }
     } else if (type === 'object') {
