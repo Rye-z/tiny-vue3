@@ -18,9 +18,15 @@ function handleEvent(el, key, eventCallback, invoker) {
     // 1. 如果 invoker 不存在，则初始化 invoker，并且将 invoker 缓存到 el._vei 中
     // 2. 绑定事件名以及回调
     if (!invoker) {
-      invoker = el._vei[key] = (e) => invoker.value(e)
+      invoker = el._vei[key] = (e) => {
+        if (Array.isArray(invoker.value)) {
+          invoker.value.forEach(cb => cb(e))
+        } else {
+          invoker.value()
+        }
+      }
       invoker.value = eventCallback
-      el.addEventListener(name, eventCallback)
+      el.addEventListener(name, invoker)
     } else {
       // 如果 invoker 已经存在，则只需要将 eventCallback 替换即可，不需要移除绑定事件
       // - 原本 addEventListener: click - eventCallback

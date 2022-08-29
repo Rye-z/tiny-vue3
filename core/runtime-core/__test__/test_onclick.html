@@ -15,7 +15,10 @@
     type: 'button',
     props: {
       id: 'foo',
-      onClick: () => alert('click'),
+      onClick: [
+        () => alert('click'),
+        () => alert('click2')
+      ],
 	    oncontextmenu: () => alert('contextMenu')
     }
   }
