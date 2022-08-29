@@ -1,4 +1,4 @@
-import { reactive } from './reactivity/reactive';
+import { reactive } from './reactivity/reactive.js';
 
 export function equal(oldVal, newVal) {
   return Object.is(oldVal, newVal)

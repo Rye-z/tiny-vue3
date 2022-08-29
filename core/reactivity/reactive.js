@@ -2,13 +2,13 @@ import {
   track,
   trigger,
   triggerType
-} from './effect';
+} from './effect.js';
 import {
   convert,
   equal,
   isMap,
   isSet
-} from '../utils';
+} from '../utils.js';
 
 export let ITERATE_KEY = Symbol()
 export let MAP_KEY_ITERATE_KEY = Symbol()

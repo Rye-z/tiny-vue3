@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>test bubbling</title>
+</head>
+<body>
+	<div id="app"></div>
+</body>
+<script type="module">
+  import { ref } from '../../reactivity/ref.js';
+  import { domRenderer } from '../renderers.js';
+  import { effect } from '../../reactivity/effect.js';
+
+  const bol = ref(false)
+  const root = document.getElementById('app')
+
+  effect(() => {
+    const vnode = {
+      type: 'div',
+      props: bol.value
+        ? {
+          onClick: () => alert('parent click')
+        }
+        : {},
+	    children: [
+        {
+          type: 'p',
+	        props: {
+            onClick: () => {
+              bol.value = true
+            },
+	        },
+          children: 'text'
+        }
+	    ]
+    }
+    // todo 更新节点内容还未完成，所以暂时不能运行
+    domRenderer.render(vnode, root)
+  })
+
+</script>
+</html>

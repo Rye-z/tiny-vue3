@@ -93,6 +93,6 @@ export function createRenderer(options) {
 
   // 因为 renderer 有很多功能，render 只是其中一种，所以返回值是一个有各种功能的对象
   return {
-    render
+    render,
   }
 }

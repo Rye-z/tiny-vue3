@@ -1,4 +1,4 @@
-import { reactive } from './reactive';
+import { reactive } from './reactive.js';
 
 export function isRef(value) {
   return !!value._v_isRef

@@ -2,10 +2,10 @@ import {
   ITERATE_KEY,
   MAP_KEY_ITERATE_KEY,
   shouldTrack
-} from './reactive';
+} from './reactive.js';
 import {
   isMap,
-} from '../utils';
+} from '../utils.js';
 
 let activeEffect = null
 const effectStack = []
