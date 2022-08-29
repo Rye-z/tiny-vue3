@@ -20,24 +20,47 @@
       type: 'div',
       props: bol.value
         ? {
-          onClick: () => alert('parent click')
+          onClick: () => {
+            alert('click')
+          },
+          class: 'box'
         }
-        : {},
-	    children: [
+        : {
+					// todo 如果设置了 onClick 属性还是会触发事件，猜测是还没使用 diff 算法的问题
+					// onClick: () => {},
+          class: 'box'
+        },
+      children: [
         {
-          type: 'p',
-	        props: {
+          type: 'div',
+          props: {
             onClick: () => {
               bol.value = true
             },
-	        },
+            class: 'box2'
+          },
           children: 'text'
         }
-	    ]
+      ]
     }
     // todo 更新节点内容还未完成，所以暂时不能运行
     domRenderer.render(vnode, root)
   })
 
 </script>
+<style>
+  .box {
+    display: grid;
+    place-items: center;
+    height: 200px;
+    width: 200px;
+    border: 1px solid red;
+  }
+
+  .box2 {
+    height: 100px;
+    width: 100px;
+    border: 1px solid blue;
+  }
+</style>
 </html>
