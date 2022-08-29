@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Title</title>
+</head>
+<body>
+  <div id="app"></div>
+</body>
+<script type="module">
+  import { createRenderer } from './index.js';
+
+  const root = document.getElementById('app')
+  const renderer = createRenderer()
+  const vnode = {
+    type: 'h1',
+    children: 'hello world'
+  }
+  renderer.render(vnode, root)
+</script>
+</html>
