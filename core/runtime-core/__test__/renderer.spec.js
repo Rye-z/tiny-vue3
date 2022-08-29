@@ -133,4 +133,23 @@ describe('renderer', function() {
     domRenderer.render(vnode, root)
     expect(root.innerHTML).toBe('<div><form id="form1"></form><input form="form1"></div>')
   });
+
+  describe('class', function() {
+    /**
+     * Vue.js 中有三种方式设置 class
+     * - 设置字符串
+     * - 设置对象
+     * - 设置数组
+     * 但本质上都可以转化为 “设置字符串” 这一种
+     *
+     * class 对应的 DOM Properties 是 el.className -> 'class' in el -> false
+     * 浏览器有三种方式设置 class
+     * - el.className -> 性能最高
+     * - el.setAttribute
+     * - el.classList
+     */
+    it('class', function() {
+
+    });
+  });
 });

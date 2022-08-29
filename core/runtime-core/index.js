@@ -8,24 +8,18 @@ export function createRenderer(options) {
   const {
     createElement,
     insert,
-    setElement
+    setElement,
+    patchProps
   } = options
+
   function patch(n1, n2, container) {
-    if(!n1) {
+    if (!n1) {
       mountElement(n2, container)
     } else {
       // n1 存在，意味着打补丁
     }
   }
 
-  function shouldSetAsProps(key, el) {
-    /**
-     * 特殊处理：比如 input.form 是只读的，只能用 setAttribute 函数来设置
-     * 此处省略其他情况
-     */
-    if (key === 'form' && el.tagName === 'INPUT') return false
-    return key in el
-  }
   /**
    * 使用 type 类型来描述一个 vnode 的类型，不同类型的 type 属性可以描述多种类型的 type
    * - 当 type 是字符串类型时，可以认为它描述的是普通标签，并使用该 type 属性的字符串作为标签的名称
@@ -50,30 +44,7 @@ export function createRenderer(options) {
     // 处理 props
     if (vnode.props) {
       for (const key in vnode.props) {
-        const value = vnode.props[key]
-        /**
-         * HTML Attributes 的作用是设置与之对应的 DOM Properties 的初始值
-         * 判断 key 是否存在对应的 DOM Properties
-         * -> div 就没有 input 的 form 属性
-         */
-        if (shouldSetAsProps(key, el)) {
-          /**
-           * 获取节点类型
-           * typeof button['disabled'] === 'boolean'
-           * typeof button['id'] === 'string'
-           */
-          const type = typeof el[key]
-          if (type === 'boolean' && value === '') {
-            // button['disabled'] = true => <button disabled></button>
-            // button['disabled'] = false => <button></button>
-            el[key] = true
-          } else {
-            el[key] = value
-          }
-        } else {
-          // 如果要设置的属性没有对应的 DOM Properties，则使用 setAttribute 函数设置属性
-          el.setAttribute(key, vnode.props[key])
-        }
+        patchProps(el, key, null, vnode.props[key])
       }
     }
 
@@ -95,6 +66,7 @@ export function createRenderer(options) {
     // 存储新 _vnode
     container._vnode = vnode
   }
+
   // 服务端渲染相关
   function hydrate() {}
 
