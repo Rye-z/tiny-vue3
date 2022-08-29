@@ -30,7 +30,8 @@ export function createRenderer(options) {
    */
   function mountElement(vnode, container) {
     // 创建 DOM 元素
-    const el = createElement(vnode.type)
+    // 将 vnode 和 真实 DOM 建立关联，方便在卸载操作时使用
+    const el = vnode.el = createElement(vnode.type)
     // 处理子节点，如果子节点是字符串，代表元素具有文本节点
     if (typeof vnode.children === 'string') {
       setElement(el, vnode.children)
@@ -52,15 +53,21 @@ export function createRenderer(options) {
     insert(el, container)
   }
 
+  function unmount(vnode) {
+    // 旧 vnode 存在，而新 vnode 不存在，说明是卸载（unmount）操作
+    // 获取真实 DOM 元素
+    const el = vnode.el
+    const parent = el.parentNode // Web API
+    if (parent) parent.removeChild(el) // WebAPI
+  }
+
   function render(vnode, container) {
     if (vnode) {
       // 新 vnode 存在，将其与旧 vnode 一起传给 patch 函数，进行打补丁
       patch(container._vnode, vnode, container)
     } else {
       if (container._vnode) {
-        // 旧 vnode 存在，而新 vnode 不存在，说明是卸载（unmount）操作
-        // 暂时这么实现
-        container.innerHTML = ''
+        unmount(container._vnode)
       }
     }
     // 存储新 _vnode

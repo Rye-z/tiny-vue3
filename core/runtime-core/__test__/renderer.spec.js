@@ -158,4 +158,18 @@ describe('renderer', function() {
     domRenderer.render(vnode, root)
     expect(root.innerHTML).toBe('<div class="foo bar baz"></div>')
   });
+
+  it('unmount', function() {
+    const root = document.createElement('div')
+    const vnode = {
+      type: 'div',
+      props: {
+        class: "foo bar baz"
+      }
+    }
+    domRenderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<div class="foo bar baz"></div>')
+    domRenderer.render(null, root)
+    expect(root.innerHTML).toBe('')
+  });
 });
