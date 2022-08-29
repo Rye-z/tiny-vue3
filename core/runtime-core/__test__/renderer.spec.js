@@ -1,31 +1,75 @@
-import { createRenderer } from '../index';
-import { serializeInner } from '../serialize';
-
-const renderer = createRenderer({
-  createElement(tag) {
-    return { tag }
-  },
-  setElement(el, children) {
-    el.text = children
-  },
-  insert(el, parent, anchor = null) {
-    parent.children = el
-  }
-})
-// const root = document.createElement('div')
-const root = { type: 'root'}
-
-const inner = (c) => serializeInner(c)
+import {
+  customRenderer,
+  domRenderer
+} from '../renderers';
 
 describe('renderer', function() {
-  // todo 暂时不能运行，可能是 vnode 返回格式不对
-  it('renderer', function() {
+  it('customRenderer', function() {
+    const root = { type: 'root'}
+
     const vnode = {
       type: 'h1',
       children: 'hello world'
     }
-    renderer.render(vnode, root)
+    customRenderer.render(vnode, root)
     console.log(JSON.stringify(root))
-    // expect(inner(root).tobe('<h1>hello world</h1>>'))
+  });
+
+  it('domRenderer', function() {
+    const root = document.createElement('div')
+    const vnode = {
+      type: 'h1',
+      children: 'hello world'
+    }
+    domRenderer.render(vnode, root)
+
+    expect(root.innerHTML).toBe('<h1>hello world</h1>')
+  });
+
+  it('should render nested vnode', function() {
+    const root = document.createElement('div')
+    const vnode = {
+      type: 'h1',
+      children: [
+        {
+          type: 'p',
+          children: 'hello'
+        }
+      ]
+    }
+    domRenderer.render(vnode, root)
+
+    expect(root.innerHTML).toBe('<h1><p>hello</p></h1>')
+  });
+
+  it('should render props', function() {
+    const root = document.createElement('div')
+    const vnode = {
+      type: 'div',
+      props: {
+        id: 'foo'
+      },
+      children: [
+        {
+          type: 'p',
+          children: 'hello'
+        }
+      ]
+    }
+    domRenderer.render(vnode, root)
+
+    expect(root.innerHTML).toBe('<div id="foo"><p>hello</p></div>')
+  });
+
+  it('button disabled should be set correctly', function() {
+    const root = document.createElement('div')
+    const button = {
+      type: 'button',
+      props: {
+        disabled: false
+      }
+    }
+
+    domRenderer.render(vnode, root)
   });
 });

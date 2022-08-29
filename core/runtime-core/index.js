@@ -32,7 +32,20 @@ export function createRenderer(options) {
     // 处理子节点，如果子节点是字符串，代表元素具有文本节点
     if (typeof vnode.children === 'string') {
       setElement(el, vnode.children)
+    } else if (Array.isArray(vnode.children)) {
+      vnode.children.forEach((child) => {
+        // 因为是对子 vnode 的处理，所以挂载点为创建的 el
+        // 因为是挂载阶段，所以第一个参数是 null
+        patch(null, child, el)
+      })
     }
+    // 处理 props
+    if (vnode.props) {
+      for (const key in vnode.props) {
+        el.setAttribute(key, vnode.props[key])
+      }
+    }
+
     // 将元素添加到容器内
     insert(el, container)
   }
