@@ -1,5 +1,6 @@
 export const TEXT = Symbol()
 export const COMMENT = Symbol()
+export const Fragment = Symbol()
 
 export function createRenderer(options) {
   const {
@@ -78,6 +79,8 @@ export function createRenderer(options) {
 
   /**
    * "打补丁"
+   * - n1 不存在 => 挂载节点
+   * - n1 存在 => 更新节点
    * @param n1 旧节点
    * @param n2 新节点
    * @param container
@@ -125,6 +128,15 @@ export function createRenderer(options) {
         if (n2.children !== n1.children) {
           setComment(el, n2.children)
         }
+      }
+    }
+    // ================ Fragment ================
+    else if (type === Fragment) {
+      if (!n1) {
+        n2.children.forEach(c => patch(null, c, container))
+      } else {
+        // 如果旧节点存在，则只需要更新 Fragment 的 children 即可
+        patchChildren(n1, n2, container)
       }
     }
     // ================ 处理组件 ================

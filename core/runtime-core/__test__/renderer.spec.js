@@ -4,6 +4,7 @@ import {
 } from '../renderers';
 import {
   COMMENT,
+  Fragment,
   TEXT
 } from '../index';
 
@@ -213,5 +214,33 @@ describe('renderer', function() {
     }
     domRenderer.render(vnode, root)
     expect(root.innerHTML).toBe('<div><!--comment-->hello world</div>')
+  });
+
+  it('should render Fragment', function() {
+    const root = document.createElement('div')
+    const vnode = {
+      type: 'ul',
+      children: [
+        {
+          type: Fragment,
+          children: [
+            {
+              type: 'li',
+              children: '1'
+            },
+            {
+              type: 'li',
+              children: '2'
+            },
+            {
+              type: 'li',
+              children: '3'
+            },
+          ]
+        },
+      ]
+    }
+    domRenderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<ul><li>1</li><li>2</li><li>3</li></ul>')
   });
 });
