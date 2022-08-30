@@ -1,4 +1,5 @@
 export const TEXT = Symbol()
+export const COMMENT = Symbol()
 
 export function createRenderer(options) {
   const {
@@ -7,7 +8,9 @@ export function createRenderer(options) {
     setElement,
     patchProps,
     createText,
-    setText
+    createComment,
+    setText,
+    setComment
   } = options
 
   /**
@@ -89,6 +92,7 @@ export function createRenderer(options) {
 
     const {type} = n2
 
+    // ================ 处理普通标签节点 ================
     if (typeof type === 'string') {
       // 如果没有旧节点，说明还没有挂载 => 执行挂载操作
       if (!n1) {
@@ -98,6 +102,7 @@ export function createRenderer(options) {
         patchElement(n1, n2)
       }
     }
+    // ================ 处理文本节点 ================
     else if (type === TEXT) {
       if (!n1) {
         const el = n2.el = createText(n2.children)
@@ -110,6 +115,19 @@ export function createRenderer(options) {
         }
       }
     }
+    // ================ 处理注释节点 ================
+    else if (type === COMMENT) {
+      if (!n1) {
+        const el = n2.el = createComment(n2.children)
+        insert(el, container)
+      } else {
+        const el = n1.el = n2.el
+        if (n2.children !== n1.children) {
+          setComment(el, n2.children)
+        }
+      }
+    }
+    // ================ 处理组件 ================
     else if (type === 'object') {
       // vnode 类型为 object，表示描述的是组件
     }

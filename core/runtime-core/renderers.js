@@ -109,8 +109,14 @@ export const domRenderer = createRenderer({
   setText(el, text) {
     el.nodeValue = text
   },
+  setComment(el, text) {
+    el.nodeValue = text
+  },
   createText(text) {
     return document.createTextNode(text)
+  },
+  createComment(text) {
+    return document.createComment(text)
   }
 })
 

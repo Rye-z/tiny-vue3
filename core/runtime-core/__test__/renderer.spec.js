@@ -2,7 +2,10 @@ import {
   customRenderer,
   domRenderer
 } from '../renderers';
-import { TEXT } from '../index';
+import {
+  COMMENT,
+  TEXT
+} from '../index';
 
 describe('renderer', function() {
   it('customRenderer', function() {
@@ -191,5 +194,24 @@ describe('renderer', function() {
     }
     domRenderer.render(vnode, root)
     expect(root.innerHTML).toBe('<div>hello world</div>')
+  });
+
+  it('render COMMENT type node', function() {
+    const root = document.createElement('div')
+    const vnode = {
+      type: 'div',
+      children: [
+        {
+          type: COMMENT,
+          children: 'comment'
+        },
+        {
+          type: TEXT,
+          children: 'hello world'
+        }
+      ]
+    }
+    domRenderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<div><!--comment-->hello world</div>')
   });
 });
