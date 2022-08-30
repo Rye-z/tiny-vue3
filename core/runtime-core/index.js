@@ -41,13 +41,15 @@ export function createRenderer(options) {
 
         // 遍历新节点
         let lastIndex = 0
-        for (let i = 0; i < oldChildren.length; i++) {
+        for (let i = 0; i < newChildren.length; i++) {
+          let find = false
           const newVNode = newChildren[i]
           // 从旧节点中查找是否有具有相同 key 的节点
           for (let j = 0; j < oldChildren.length; j++) {
             const oldVNode = oldChildren[j]
             // 说明是具有相同 DOM 元素的节点
             if (oldVNode.key === newVNode.key) {
+              find = true
               // 元素可能是标签相同，但是内容已经改变，所以需要进行 patch 操作
               patch(oldVNode, newVNode, container)
 
@@ -65,7 +67,21 @@ export function createRenderer(options) {
               } else {
                 lastIndex = j
               }
+              break
             }
+          }
+
+          // 说明子节点是新增的
+          if (!find) {
+            const preVNode = newChildren[i - 1]
+            let anchor = null
+            if (preVNode) {
+              anchor = preVNode.el.nextSibling
+            } else {
+              // 如果没有 preVNode，则用当前父节点的第一个元素作为锚点
+              anchor = container.firstChild
+            }
+            patch(null, newVNode, container, anchor)
           }
         }
       } else {
@@ -119,7 +135,7 @@ export function createRenderer(options) {
    * @param n2 新节点
    * @param container
    */
-  function patch(n1, n2, container) {
+  function patch(n1, n2, container, anchor) {
     // 不同 type 的元素之间，可能属性是不同的，所以不存在打补丁的意义
     if (n1 && n1.type !== n2.type) {
       unmount(n1)
@@ -133,7 +149,7 @@ export function createRenderer(options) {
     if (typeof type === 'string') {
       // 如果没有旧节点，说明还没有挂载 => 执行挂载操作
       if (!n1) {
-        mountElement(n2, container)
+        mountElement(n2, container, anchor)
       } else {
         // 旧节点存在，执行 “打补丁” 操作
         patchElement(n1, n2)
@@ -190,7 +206,7 @@ export function createRenderer(options) {
    *   children: 'hello'
    * }
    */
-  function mountElement(vnode, container) {
+  function mountElement(vnode, container, anchor) {
     // 创建 DOM 元素
     // 将 vnode 和 真实 DOM 建立关联，方便在卸载操作时使用
     const el = vnode.el = createElement(vnode.type)
@@ -212,7 +228,7 @@ export function createRenderer(options) {
     }
 
     // 将元素添加到容器内
-    insert(el, container)
+    insert(el, container, anchor)
   }
 
   function unmount(vnode) {
