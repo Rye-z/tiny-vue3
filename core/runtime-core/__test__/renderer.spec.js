@@ -2,6 +2,7 @@ import {
   customRenderer,
   domRenderer
 } from '../renderers';
+import { TEXT } from '../index';
 
 describe('renderer', function() {
   it('customRenderer', function() {
@@ -175,5 +176,20 @@ describe('renderer', function() {
 
   it('事件的处理', function() {
     // 见 test_onclick.html
+  });
+
+  it('render TEXT type node', function() {
+    const root = document.createElement('div')
+    const vnode = {
+      type: 'div',
+      children: [
+        {
+          type: TEXT,
+          children: 'hello world'
+        }
+      ]
+    }
+    domRenderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<div>hello world</div>')
   });
 });

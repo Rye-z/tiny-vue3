@@ -1,9 +1,13 @@
+export const TEXT = Symbol()
+
 export function createRenderer(options) {
   const {
     createElement,
     insert,
     setElement,
-    patchProps
+    patchProps,
+    createText,
+    setText
   } = options
 
   /**
@@ -93,9 +97,23 @@ export function createRenderer(options) {
         // 旧节点存在，执行 “打补丁” 操作
         patchElement(n1, n2)
       }
-    } else if (type === 'object') {
+    }
+    else if (type === TEXT) {
+      if (!n1) {
+        const el = n2.el = createText(n2.children)
+        insert(el, container)
+      } else {
+        // n1 存在，替换节点内容
+        const el = n1.el = n2.el
+        if (n2.children !== n1.children) {
+          setText(el, n2.children)
+        }
+      }
+    }
+    else if (type === 'object') {
       // vnode 类型为 object，表示描述的是组件
-    } else if( type === '') {
+    }
+    else if( type === '') {
       // 其他
     }
   }

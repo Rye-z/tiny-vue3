@@ -72,10 +72,10 @@ export const domRenderer = createRenderer({
           // 如果 invoker 已经存在，则只需要将 eventCallback 替换即可，不需要移除绑定事件
           // - 原本 addEventListener: click - eventCallback
           // - 现在 addEventListener: click - invoker.value - eventCallback
-          invoker.attached = performance.now()
+          invoker.attached = performance.now() // 这一步书里没有！！！
           invoker.value = nextValue
         }
-      } else if(invoker) {
+      } else if (invoker) {
         // 新的绑定函数不存在，但是旧的函数存在，则移除事件
         el.removeEventListener(name, invoker)
       }
@@ -94,7 +94,7 @@ export const domRenderer = createRenderer({
        * typeof button['id'] === 'string'
        */
       const type = typeof el[key]
-      if (type === 'boolean' && nextValue=== '') {
+      if (type === 'boolean' && nextValue === '') {
         // button['disabled'] = true => <button disabled></button>
         // button['disabled'] = false => <button></button>
         el[key] = true
@@ -105,6 +105,12 @@ export const domRenderer = createRenderer({
       // 如果要设置的属性没有对应的 DOM Properties，则使用 setAttribute 函数设置属性
       el.setAttribute(key, nextValue)
     }
+  },
+  setText(el, text) {
+    el.nodeValue = text
+  },
+  createText(text) {
+    return document.createTextNode(text)
   }
 })
 
