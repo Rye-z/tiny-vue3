@@ -30,12 +30,40 @@ export function createRenderer(options) {
       setElement(container, n2.children)
     }
     // b. 新子节点为数组
-    else if(Array.isArray(n2.children)) {
+    else if (Array.isArray(n2.children)) {
       // 判断旧节点是否也是一组数组
       if (Array.isArray(n1.children)) {
-        // todo diff 算法
-        n1.children.forEach(c => unmount(c))
-        n1.children.forEach(c => patch(null, c, container))
+        // ================ Diff 算法 ================
+
+        // 简单 Diff 算法实现
+        const oldChildren = n1.children
+        const newChildren = n2.children
+        const oldLen = n1.children.length
+        const newLen = n2.children.length
+
+        const commonLen = Math.min(oldLen, newLen)
+
+        // 遍历长度更少的一组节点，这样可以更高效地调用 patch 进行更新
+        for (let i = 0; i < commonLen; i++) {
+          patch(oldChildren[i], newChildren[i], container)
+          console.log('patch')
+        }
+
+        // 旧节点少于新节点，多余的新节点执行挂载操作
+        if (oldLen < newLen) {
+          for (let i = commonLen; i < newLen; i++) {
+            patch(null, newChildren[i], container)
+            console.log('new patch')
+          }
+        }
+
+        // 新节点少于旧节点，多余的旧节点执行卸载操作
+        if (newLen < oldLen) {
+          for (let i = commonLen; i < oldLen; i++) {
+            unmount(oldChildren[i])
+            console.log('old unmount')
+          }
+        }
       } else {
         // 此时，旧节点要么是 1. 文本节点，2.null
         // 只需要将旧节点清空，然后再逐个挂载
@@ -69,7 +97,7 @@ export function createRenderer(options) {
       }
     }
     for (const key in oldProps) {
-      if(!(key in newProps)) {
+      if (!(key in newProps)) {
         patchProps(el, key, oldProps[key], null)
       }
     }
@@ -87,13 +115,13 @@ export function createRenderer(options) {
    */
   function patch(n1, n2, container) {
     // 不同 type 的元素之间，可能属性是不同的，所以不存在打补丁的意义
-    if(n1 && n1.type !== n2.type) {
+    if (n1 && n1.type !== n2.type) {
       unmount(n1)
       // 将 n1 设为 null，保证后续挂载操作正确执行
       n1 = null
     }
 
-    const {type} = n2
+    const { type } = n2
 
     // ================ 处理普通标签节点 ================
     if (typeof type === 'string') {
@@ -133,6 +161,7 @@ export function createRenderer(options) {
     // ================ Fragment ================
     else if (type === Fragment) {
       if (!n1) {
+        // Fragment 用来处理多根节点，所以没有父节点，所以不能用 mountElement
         n2.children.forEach(c => patch(null, c, container))
       } else {
         // 如果旧节点存在，则只需要更新 Fragment 的 children 即可
@@ -142,8 +171,7 @@ export function createRenderer(options) {
     // ================ 处理组件 ================
     else if (type === 'object') {
       // vnode 类型为 object，表示描述的是组件
-    }
-    else if( type === '') {
+    } else if (type === '') {
       // 其他
     }
   }
@@ -207,6 +235,6 @@ export function createRenderer(options) {
 
   // 因为 renderer 有很多功能，render 只是其中一种，所以返回值是一个有各种功能的对象
   return {
-    render,
+    render
   }
 }
