@@ -39,6 +39,9 @@ export function createRenderer(options) {
         const oldChildren = n1.children
         const newChildren = n2.children
 
+        // 首先 key 肯定是唯一的
+        const keysToRemove = new Map()
+        oldChildren.forEach(c => keysToRemove.set(c.key, c))
         // 遍历新节点
         let lastIndex = 0
         for (let i = 0; i < newChildren.length; i++) {
@@ -50,6 +53,7 @@ export function createRenderer(options) {
             // 说明是具有相同 DOM 元素的节点
             if (oldVNode.key === newVNode.key) {
               find = true
+              keysToRemove.delete(oldVNode.key)
               // 元素可能是标签相同，但是内容已经改变，所以需要进行 patch 操作
               patch(oldVNode, newVNode, container)
 
@@ -84,6 +88,10 @@ export function createRenderer(options) {
             patch(null, newVNode, container, anchor)
           }
         }
+        // 删除遗留属性
+        keysToRemove.forEach((vnode, key) => {
+          unmount(vnode)
+        })
       } else {
         // 此时，旧节点要么是 1. 文本节点，2.null
         // 只需要将旧节点清空，然后再逐个挂载
