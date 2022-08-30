@@ -17,7 +17,7 @@ export const customRenderer = createRenderer({
     el.text = children
   },
   insert(el, parent, anchor = null) {
-    parent.children = el
+    parent.insertBefore(el, anchor)
   }
 })
 
@@ -28,8 +28,8 @@ export const domRenderer = createRenderer({
   setElement(el, children) {
     el.textContent = children
   },
-  insert(el, container) {
-    container.appendChild(el)
+  insert(el, parent, anchor = null) {
+    parent.insertBefore(el, anchor)
   },
   /**
    * @param el

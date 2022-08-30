@@ -38,30 +38,34 @@ export function createRenderer(options) {
         // 简单 Diff 算法实现
         const oldChildren = n1.children
         const newChildren = n2.children
-        const oldLen = n1.children.length
-        const newLen = n2.children.length
 
-        const commonLen = Math.min(oldLen, newLen)
+        // 遍历新节点
+        let lastIndex = 0
+        for (let i = 0; i < newChildren; i++) {
+          const newVNode = newChildren[i]
+          // 从旧节点中查找是否有具有相同 key 的节点
+          for (let j = 0; j < oldChildren; j++) {
+            const oldVNode = oldChildren[j]
+            // 说明是具有相同 DOM 元素的节点
+            if (oldVNode.key === newVNode.key) {
+              // 元素可能是标签相同，但是内容已经改变，所以需要进行 patch 操作
+              patch(oldVNode, newVNode, container)
 
-        // 遍历长度更少的一组节点，这样可以更高效地调用 patch 进行更新
-        for (let i = 0; i < commonLen; i++) {
-          patch(oldChildren[i], newChildren[i], container)
-          console.log('patch')
-        }
-
-        // 旧节点少于新节点，多余的新节点执行挂载操作
-        if (oldLen < newLen) {
-          for (let i = commonLen; i < newLen; i++) {
-            patch(null, newChildren[i], container)
-            console.log('new patch')
-          }
-        }
-
-        // 新节点少于旧节点，多余的旧节点执行卸载操作
-        if (newLen < oldLen) {
-          for (let i = commonLen; i < oldLen; i++) {
-            unmount(oldChildren[i])
-            console.log('old unmount')
+              if (j < lastIndex) {
+                // 说明真实的 DOM 元素需要移动
+                // 先获取上一个节点，因为上一个节点可能修改了 lastIndex，所以需要移动到上一个节点后面
+                const preVNode = newChildren[i - 1]
+                // 如果没有上个节点，说明是第一个节点
+                if (preVNode) {
+                  // 获取新节点的下一个节点兄弟节点作为锚点
+                  // newNode.el 和 oldNode.el 是相同的
+                  const anchor = preVNode.el.nextSibling
+                  insert(oldVNode.el, container, anchor)
+                }
+              } else {
+                lastIndex = j
+              }
+            }
           }
         }
       } else {
@@ -82,10 +86,12 @@ export function createRenderer(options) {
   }
 
   /**
+   * patchElement 是对于具有相同 key 的 vnode 节点进行 打补丁操作
    * @param n1 旧节点
    * @param n2 新节点
    */
   function patchElement(n1, n2) {
+    // 这一步其实就是具有相同 key 的 vnode 节点的真实节点复用，不需要再次调用 createElement 创建节点
     const el = n2.el = n1.el
     const oldProps = n1.props
     const newProps = n2.props
