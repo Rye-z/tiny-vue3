@@ -1,50 +1,29 @@
 import { domRenderer } from '../renderers';
 
 describe('diff', function() {
-  it('9.1 简单 diff', function() {
+  it('', function() {
     const root = document.createElement('div')
-    const spyFn = jest.spyOn(console, 'log')
 
     const vnode1 = {
       type: 'div',
-      children:[
-        { type: 'p', children: '1'},
-        { type: 'p', children: '2'},
-        { type: 'p', children: '3'},
+      children: [
+        { type: 'p', children: '1', key: 1 },
+        { type: 'p', children: '2', key: 2 },
+        { type: 'p', children: '3', key: 3 }
       ]
     }
     const vnode2 = {
       type: 'div',
-      children:[
-        { type: 'p', children: '4'},
-        { type: 'p', children: '5'},
-        { type: 'p', children: '6'},
-      ]
-    }
-
-    const vnode3 = {
-      type: 'div',
-      children:[
-        { type: 'p', children: '4'},
-        { type: 'p', children: '5'},
-        { type: 'p', children: '6'},
-        { type: 'p', children: '7'},
-      ]
-    }
-
-    const vnode4 = {
-      type: 'div',
-      children:[
-        { type: 'p', children: '4'},
-        { type: 'p', children: '5'},
+      children: [
+        { type: 'p', children: '3-3', key: 3 },
+        { type: 'p', children: '1-1', key: 1 },
+        { type: 'p', children: '2-2', key: 2 }
       ]
     }
 
     domRenderer.render(vnode1, root)
+    expect(root.innerHTML).toBe('<div><p>1</p><p>2</p><p>3</p></div>')
     domRenderer.render(vnode2, root)
-    expect(spyFn).toHaveBeenCalledTimes(3)
-    domRenderer.render(vnode3, root)
-    expect(spyFn).toHaveBeenCalledTimes(7)
-    domRenderer.render(vnode4, root)
+    expect(root.innerHTML).toBe('<div><p>3-3</p><p>1-1</p><p>2-2</p></div>')
   });
 });

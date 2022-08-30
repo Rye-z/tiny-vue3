@@ -41,10 +41,10 @@ export function createRenderer(options) {
 
         // 遍历新节点
         let lastIndex = 0
-        for (let i = 0; i < newChildren; i++) {
+        for (let i = 0; i < oldChildren.length; i++) {
           const newVNode = newChildren[i]
           // 从旧节点中查找是否有具有相同 key 的节点
-          for (let j = 0; j < oldChildren; j++) {
+          for (let j = 0; j < oldChildren.length; j++) {
             const oldVNode = oldChildren[j]
             // 说明是具有相同 DOM 元素的节点
             if (oldVNode.key === newVNode.key) {
