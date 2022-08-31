@@ -15,6 +15,115 @@ export function createRenderer(options) {
   } = options
 
   /**
+   * 简单 Diff 算法
+   * @param n1
+   * @param n2
+   * @param container
+   */
+  function simpleDiff(n1, n2, container) {
+    const oldChildren = n1.children
+    const newChildren = n2.children
+
+    // 首先 key 肯定是唯一的
+    const keysToRemove = new Map()
+    oldChildren.forEach(c => keysToRemove.set(c.key, c))
+    // 遍历新节点
+    let lastIndex = 0
+    for (let i = 0; i < newChildren.length; i++) {
+      let find = false
+      const newVNode = newChildren[i]
+      // 从旧节点中查找是否有具有相同 key 的节点
+      for (let j = 0; j < oldChildren.length; j++) {
+        const oldVNode = oldChildren[j]
+        // 说明是具有相同 DOM 元素的节点
+        if (oldVNode.key === newVNode.key) {
+          find = true
+          keysToRemove.delete(oldVNode.key)
+          // 元素可能是标签相同，但是内容已经改变，所以需要进行 patch 操作
+          patch(oldVNode, newVNode, container)
+
+          if (j < lastIndex) {
+            // 说明真实的 DOM 元素需要移动
+            // 先获取上一个节点，因为上一个节点可能修改了 lastIndex，所以需要移动到上一个节点后面
+            const preVNode = newChildren[i - 1]
+            // 如果没有上个节点，说明是第一个节点
+            if (preVNode) {
+              // 获取新节点的下一个节点兄弟节点作为锚点
+              // newNode.el 和 oldNode.el 是相同的
+              const anchor = preVNode.el.nextSibling
+              insert(oldVNode.el, container, anchor)
+            }
+          } else {
+            lastIndex = j
+          }
+          break
+        }
+      }
+
+      // 说明子节点是新增的
+      if (!find) {
+        const preVNode = newChildren[i - 1]
+        let anchor = null
+        if (preVNode) {
+          anchor = preVNode.el.nextSibling
+        } else {
+          // 如果没有 preVNode，则用当前父节点的第一个元素作为锚点
+          anchor = container.firstChild
+        }
+        patch(null, newVNode, container, anchor)
+      }
+    }
+    // 删除遗留属性
+    keysToRemove.forEach((vnode, key) => {
+      unmount(vnode)
+    })
+  }
+
+  /**
+   * 双端 Diff 算法
+   */
+  function doubleEndDiff(n1, n2, container) {
+    const oldChildren = n1.children
+    const newChildren = n2.children
+
+    let oldStartIdx = 0
+    let oldEndIdx = n1.children.length - 1
+    let newStartIdx = 0
+    let newEndIdx = n2.children.length - 1
+
+    let oldStartVNode = oldChildren[oldStartIdx]
+    let newStartVNode = newChildren[newStartIdx]
+    let oldEndVNode = oldChildren[oldEndIdx]
+    let newEndVNode = newChildren[newEndIdx]
+
+    while(newStartIdx <= newEndIdx && oldStartIdx <= oldEndIdx) {
+      if (newStartVNode.key === oldStartVNode.key) {
+        patch(oldStartVNode, newStartVNode,container)
+        oldStartVNode = oldChildren[++oldStartIdx]
+        newStartVNode = newChildren[++newStartIdx]
+      }
+      else if(newEndVNode.key === oldEndVNode.key) {
+        patch(oldEndVNode, newEndVNode, container)
+        oldEndVNode = oldChildren[--oldEndIdx]
+        newEndVNode = newChildren[--newEndIdx]
+      }
+      else if(newEndVNode.key === oldStartVNode.key) {
+        patch(oldStartVNode, newEndVNode, container)
+        insert(oldStartVNode.el, container, oldEndVNode.el.nextSibling)
+        newEndVNode = newChildren[--newEndIdx]
+        oldStartVNode = oldChildren[++oldStartIdx]
+      }
+      else if(newStartVNode.key === oldEndVNode.key) {
+        // 需要移动 DOM
+        patch(oldEndVNode, newStartVNode, container)
+        insert(oldEndVNode.el, container ,oldStartVNode.el)
+        oldEndVNode = oldChildren[--oldEndIdx]
+        newStartVNode= newChildren[++newStartIdx]
+      }
+    }
+  }
+
+  /**
    * @param n1 旧节点
    * @param n2 新节点
    * @param container 父节点
@@ -33,65 +142,10 @@ export function createRenderer(options) {
     else if (Array.isArray(n2.children)) {
       // 判断旧节点是否也是一组数组
       if (Array.isArray(n1.children)) {
-        // ================ Diff 算法 ================
-
-        // 简单 Diff 算法实现
-        const oldChildren = n1.children
-        const newChildren = n2.children
-
-        // 首先 key 肯定是唯一的
-        const keysToRemove = new Map()
-        oldChildren.forEach(c => keysToRemove.set(c.key, c))
-        // 遍历新节点
-        let lastIndex = 0
-        for (let i = 0; i < newChildren.length; i++) {
-          let find = false
-          const newVNode = newChildren[i]
-          // 从旧节点中查找是否有具有相同 key 的节点
-          for (let j = 0; j < oldChildren.length; j++) {
-            const oldVNode = oldChildren[j]
-            // 说明是具有相同 DOM 元素的节点
-            if (oldVNode.key === newVNode.key) {
-              find = true
-              keysToRemove.delete(oldVNode.key)
-              // 元素可能是标签相同，但是内容已经改变，所以需要进行 patch 操作
-              patch(oldVNode, newVNode, container)
-
-              if (j < lastIndex) {
-                // 说明真实的 DOM 元素需要移动
-                // 先获取上一个节点，因为上一个节点可能修改了 lastIndex，所以需要移动到上一个节点后面
-                const preVNode = newChildren[i - 1]
-                // 如果没有上个节点，说明是第一个节点
-                if (preVNode) {
-                  // 获取新节点的下一个节点兄弟节点作为锚点
-                  // newNode.el 和 oldNode.el 是相同的
-                  const anchor = preVNode.el.nextSibling
-                  insert(oldVNode.el, container, anchor)
-                }
-              } else {
-                lastIndex = j
-              }
-              break
-            }
-          }
-
-          // 说明子节点是新增的
-          if (!find) {
-            const preVNode = newChildren[i - 1]
-            let anchor = null
-            if (preVNode) {
-              anchor = preVNode.el.nextSibling
-            } else {
-              // 如果没有 preVNode，则用当前父节点的第一个元素作为锚点
-              anchor = container.firstChild
-            }
-            patch(null, newVNode, container, anchor)
-          }
-        }
-        // 删除遗留属性
-        keysToRemove.forEach((vnode, key) => {
-          unmount(vnode)
-        })
+        // ================ Start: Diff 算法 ================
+        // simpleDiff(n1, n2, container)
+        doubleEndDiff(n1, n2, container)
+        // ================ End: Diff 算法 ================
       } else {
         // 此时，旧节点要么是 1. 文本节点，2.null
         // 只需要将旧节点清空，然后再逐个挂载
