@@ -96,29 +96,50 @@ export function createRenderer(options) {
     let oldEndVNode = oldChildren[oldEndIdx]
     let newEndVNode = newChildren[newEndIdx]
 
-    while(newStartIdx <= newEndIdx && oldStartIdx <= oldEndIdx) {
-      if (newStartVNode.key === oldStartVNode.key) {
-        patch(oldStartVNode, newStartVNode,container)
+    while (newStartIdx <= newEndIdx && oldStartIdx <= oldEndIdx) {
+      // 处理非理想情况时，一定会出现 oldChildren 中出现 null 的情况
+      // 当遍历再次进行的时候，oldEndVNode 和 newEndVNode 都可能出现 null 的情况
+      // 直接移动到下一步
+      if (!oldStartVNode) {
+        oldStartVNode = oldChildren[++oldStartIdx]
+      }
+      else if(!oldEndVNode) {
+        oldEndVNode = oldChildren[--oldEndIdx]
+      }
+      else if (newStartVNode.key === oldStartVNode.key) {
+        patch(oldStartVNode, newStartVNode, container)
         oldStartVNode = oldChildren[++oldStartIdx]
         newStartVNode = newChildren[++newStartIdx]
-      }
-      else if(newEndVNode.key === oldEndVNode.key) {
+      } else if (newEndVNode.key === oldEndVNode.key) {
         patch(oldEndVNode, newEndVNode, container)
         oldEndVNode = oldChildren[--oldEndIdx]
         newEndVNode = newChildren[--newEndIdx]
-      }
-      else if(newEndVNode.key === oldStartVNode.key) {
+      } else if (newEndVNode.key === oldStartVNode.key) {
         patch(oldStartVNode, newEndVNode, container)
+        // insertBefore(el, container, anchor) 如果 anchor 为 null/undefined，则插入最后
         insert(oldStartVNode.el, container, oldEndVNode.el.nextSibling)
         newEndVNode = newChildren[--newEndIdx]
         oldStartVNode = oldChildren[++oldStartIdx]
-      }
-      else if(newStartVNode.key === oldEndVNode.key) {
+      } else if (newStartVNode.key === oldEndVNode.key) {
         // 需要移动 DOM
         patch(oldEndVNode, newStartVNode, container)
-        insert(oldEndVNode.el, container ,oldStartVNode.el)
+        insert(oldEndVNode.el, container, oldStartVNode.el)
         oldEndVNode = oldChildren[--oldEndIdx]
-        newStartVNode= newChildren[++newStartIdx]
+        newStartVNode = newChildren[++newStartIdx]
+      }
+      // 非理想情况下的逻辑
+      else {
+        const idxInOld = oldChildren.findIndex(v => v.key === newStartVNode.key)
+
+        // 如果找到了
+        if (idxInOld > 0) {
+          const nodeToMove = oldChildren[idxInOld]
+          patch(nodeToMove, newStartVNode, container)
+          insert(nodeToMove.el, container, oldStartVNode.el)
+          // 因为在 idxInOld 中，真实 dom 已经被移动过了，但是 oldChildren 顺序没有改变，所以将其置为 null
+          oldChildren[idxInOld] = null
+          newStartVNode = newChildren[++newStartIdx]
+        }
       }
     }
   }
