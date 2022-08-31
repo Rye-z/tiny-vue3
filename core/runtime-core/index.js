@@ -129,6 +129,7 @@ export function createRenderer(options) {
       }
       // 非理想情况下的逻辑
       else {
+        // 如果在循环过程中，上面的步骤中，每一步都有命中，被消消乐了，那么可能会有残留
         const idxInOld = oldChildren.findIndex(v => v.key === newStartVNode.key)
 
         // 如果找到了
@@ -139,7 +140,18 @@ export function createRenderer(options) {
           // 因为在 idxInOld 中，真实 dom 已经被移动过了，但是 oldChildren 顺序没有改变，所以将其置为 null
           oldChildren[idxInOld] = null
           newStartVNode = newChildren[++newStartIdx]
+        } else {
+          // 如果没找到，将节点挂载到 oldStartVnode 前
+          patch(null, newStartVNode, container, oldStartVNode.el)
         }
+        newStartVNode = newChildren[++newStartIdx]
+      }
+    }
+    // 检查漏网之鱼
+    if (oldEndIdx < oldStartIdx && newStartIdx <= newEndIdx) {
+      // 有新节点遗留，遍历 newStartIdx 和 newEndIdx 之间的节点
+      for (let i = newStartIdx; i <= newEndIdx; i++) {
+        patch(null, newChildren[i], container, oldStartVNode.el)
       }
     }
   }
@@ -217,6 +229,7 @@ export function createRenderer(options) {
    * @param n1 旧节点
    * @param n2 新节点
    * @param container
+   * @param anchor
    */
   function patch(n1, n2, container, anchor) {
     // 不同 type 的元素之间，可能属性是不同的，所以不存在打补丁的意义
