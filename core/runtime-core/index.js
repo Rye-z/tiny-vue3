@@ -153,6 +153,12 @@ export function createRenderer(options) {
       for (let i = newStartIdx; i <= newEndIdx; i++) {
         patch(null, newChildren[i], container, oldStartVNode.el)
       }
+    } else if (newEndIdx < newStartIdx && oldStartIdx <= oldEndIdx) {
+      // 有旧节点遗留，卸载
+      for (let i = oldStartIdx; i <= oldEndIdx; i++) {
+        // 可能为空
+        oldChildren[i] && unmount(oldChildren[i])
+      }
     }
   }
 
