@@ -130,7 +130,7 @@ export function createRenderer(options) {
       // 非理想情况下的逻辑
       else {
         // 如果在循环过程中，上面的步骤中，每一步都有命中，被消消乐了，那么可能会有残留
-        const idxInOld = oldChildren.findIndex(v => v.key === newStartVNode.key)
+        const idxInOld = oldChildren.findIndex(v => v && (v.key === newStartVNode.key))
 
         // 如果找到了
         if (idxInOld > 0) {
@@ -139,7 +139,6 @@ export function createRenderer(options) {
           insert(nodeToMove.el, container, oldStartVNode.el)
           // 因为在 idxInOld 中，真实 dom 已经被移动过了，但是 oldChildren 顺序没有改变，所以将其置为 null
           oldChildren[idxInOld] = null
-          newStartVNode = newChildren[++newStartIdx]
         } else {
           // 如果没找到，将节点挂载到 oldStartVnode 前
           patch(null, newStartVNode, container, oldStartVNode.el)
