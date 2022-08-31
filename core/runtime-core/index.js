@@ -181,8 +181,8 @@ export function createRenderer(options) {
       // 判断旧节点是否也是一组数组
       if (Array.isArray(n1.children)) {
         // ================ Start: Diff 算法 ================
-        // simpleDiff(n1, n2, container)
-        doubleEndDiff(n1, n2, container)
+        simpleDiff(n1, n2, container)
+        // doubleEndDiff(n1, n2, container)
         // ================ End: Diff 算法 ================
       } else {
         // 此时，旧节点要么是 1. 文本节点，2.null
