@@ -1,3 +1,5 @@
+import { getSequence } from '../utils';
+
 export const TEXT = Symbol()
 export const COMMENT = Symbol()
 export const Fragment = Symbol()
@@ -74,7 +76,7 @@ export function createRenderer(options) {
       }
     }
     // 删除遗留属性
-    keysToRemove.forEach((vnode, key) => {
+    keysToRemove.forEach((vnode, _) => {
       unmount(vnode)
     })
   }
@@ -204,6 +206,100 @@ export function createRenderer(options) {
     }
     // b 处理非理想状态
     else {
+
+      // 这里的 newStart 和 oldStart 是处理之后的索引，可能不是 0 了
+      let newStart = start
+      let oldStart = start
+
+      // 优化双重遍历
+      // - 存储新序列的 key 和 新序列的索引值
+      //    => 这样在遍历旧序列的时候，就可以直接通过 key-value 获取新节点的索引值，而不用遍历
+      // - 这里要注意
+      const keyIndex = {}
+      for (let i = newStart; i <= newEnd; i++) {
+        keyIndex[newChildren[i].key] = i
+      }
+
+      // 1. 构建 source 数组 -> 用于构建最大递增子序列
+      // - 长度等于“预处理”之后的新节点序列长度
+      // - 存储和新节点具有相同 key 值的旧节点的索引值
+      // - source 的每个元素有两层含义
+      //    - 1. 每个元素索引和新序列元素索引 一一对应
+      //    - 2. 假设 index 为 1，且 `source[index] !== -1` => `newChildren[index].key = oldChildren[source[index]].key`
+      // 2. 判断是否有节点需要移动
+      // - 注意：这里只需要判断，不需要移动元素，移动元素在下一环节
+      const count = newEnd - newStart + 1
+      let source = new Array(count)
+      source.fill(-1)
+
+      // 判断是否有多余节点需要卸载
+      let patched = 0
+
+      // 判断是否有节点需要移动
+      let moved = false
+      let pos = 0
+
+      for (let i = oldStart; i <= oldEnd; i++) {
+        oldVNode = oldChildren[i]
+        // 更新过的节点数小于可能需要更新的节点数，继续执行更新
+        if (patched <= count) {
+          const newIdx = keyIndex[oldVNode.key]
+          // 这里因为 index 可能是 0，所以需要判断
+          if (typeof newIdx !== 'undefined') {
+            const newVNode = newChildren[newIdx]
+            patch(oldVNode, newVNode, container)
+            source[newIdx - newStart] = i
+            patched++
+
+            // 这里判断方式和 “简单 Diff 算法类似”
+            if (newIdx < pos) {
+              moved = true
+            } else {
+              pos = newIdx
+            }
+          } else {
+            // 说明是多余节点，删除
+            unmount(oldVNode)
+          }
+        } else {
+          // 更新的节点数大于需要更新的节点数，说明这是多余节点，执行卸载
+          unmount(oldVNode)
+        }
+      }
+
+      // 移动元素
+      if (moved) {
+        // 获取最大增长子序列，返回的是 index
+        // seq 中的值都是不需要移动的值
+        const seq = getSequence(source)
+        // 指向 seq 最后一个元素
+        let n = seq.length - 1
+        // 指向新序列最后一个元素
+        let m = count - 1
+
+        // 这一步可以理解为对 source 的遍历，因为 source 和 新序列是等长的
+        for (let i = m; i >= 0; i--) {
+          // 需要创建节点
+          if (source[i] === -1) {
+            // 该节点在 newChildren 中的真实位置索引
+            const pos = i + newStart
+            const newVnode = newChildren[pos]
+            const anchor = newChildren[pos + 1] ? newChildren[pos + 1].el : null
+            patch(null, newVnode, container, anchor)
+          }
+          // 这一步其实是在比较新序列索引和旧序列索引是否相同，相同，说明不需要移动
+          else if (m !== seq[n]) {
+            // 说明节点需要移动
+            const pos = i + newStart
+            const newVnode = newChildren[pos]
+            const anchor = newChildren[pos + 1] ? newChildren[pos + 1].el : null
+            insert(newVnode.el, container, anchor)
+          } else {
+            // 这里说明索引值，一样，也就是顺序不需要变化
+            n--
+          }
+        }
+      }
     }
 
   }
@@ -402,7 +498,7 @@ export function createRenderer(options) {
   }
 
   // 服务端渲染相关
-  function hydrate() {}
+  // function hydrate() {}
 
   // 因为 renderer 有很多功能，render 只是其中一种，所以返回值是一个有各种功能的对象
   return {
