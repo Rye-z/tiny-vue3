@@ -102,11 +102,9 @@ export function createRenderer(options) {
       // 直接移动到下一步
       if (!oldStartVNode) {
         oldStartVNode = oldChildren[++oldStartIdx]
-      }
-      else if(!oldEndVNode) {
+      } else if (!oldEndVNode) {
         oldEndVNode = oldChildren[--oldEndIdx]
-      }
-      else if (newStartVNode.key === oldStartVNode.key) {
+      } else if (newStartVNode.key === oldStartVNode.key) {
         patch(oldStartVNode, newStartVNode, container)
         oldStartVNode = oldChildren[++oldStartIdx]
         newStartVNode = newChildren[++newStartIdx]
@@ -161,6 +159,55 @@ export function createRenderer(options) {
     }
   }
 
+  function quickDiff(n1, n2, container) {
+    const oldChildren = n1.children
+    const newChildren = n2.children
+    // a. 预处理
+    // a.1 更新相同的前置节点
+    // 新节点和旧节点起始索引值相同
+    let start = 0
+    let newVNode = newChildren[start]
+    let oldVNode = oldChildren[start]
+
+    while (newVNode.key === oldVNode.key) {
+      patch(oldVNode, newVNode, container)
+      start++
+      newVNode = newChildren[start]
+      oldVNode = oldChildren[start]
+    }
+
+    // a.2 更新相同的后置节点
+    // 新节点和旧节点结束索引值相同
+    let oldEnd = n1.children.length - 1
+    let newEnd = n2.children.length - 1
+    newVNode = newChildren[newEnd]
+    oldVNode = oldChildren[oldEnd]
+
+    while (newVNode.key === oldVNode.key) {
+      patch(oldVNode, newVNode, container)
+      newVNode = newChildren[--newEnd]
+      oldVNode = oldChildren[--oldEnd]
+    }
+
+    // a.3.1 理想状态下，新节点序列未遍历完 -> 创建节点
+    if (start > oldEnd && start <= newEnd) {
+      const anchor = newChildren[newEnd + 1] ? newChildren[newEnd + 1].el : null
+      while (start <= newEnd) {
+        patch(null, newChildren[start++], container, anchor)
+      }
+    }
+    // a.3.2 理想状态下，旧节点序列未遍历完 -> 删除多余节点
+    else if (start > newEnd && start <= oldEnd) {
+      while (start <= oldEnd) {
+        unmount(oldChildren[start++])
+      }
+    }
+    // b 处理非理想状态
+    else {
+    }
+
+  }
+
   /**
    * @param n1 旧节点
    * @param n2 新节点
@@ -181,8 +228,9 @@ export function createRenderer(options) {
       // 判断旧节点是否也是一组数组
       if (Array.isArray(n1.children)) {
         // ================ Start: Diff 算法 ================
-        simpleDiff(n1, n2, container)
+        // simpleDiff(n1, n2, container)
         // doubleEndDiff(n1, n2, container)
+        quickDiff(n1, n2, container)
         // ================ End: Diff 算法 ================
       } else {
         // 此时，旧节点要么是 1. 文本节点，2.null
