@@ -70,9 +70,9 @@ pnpm install
 
 自己学习时，画的一些图，在 **/core/doc** 下，之后可能也会放一些文档。
 
-#### 简单 Diff 算法
-![简单diff](./doc/简单Diff算法.excalidraw.png)
-
 #### 双端 Diff 算法
 ![双端diff](./doc/双端Diff算法.excalidraw.png)
+
+#### 快速 Diff 算法
+![快速diff](./doc/快速Diff算法.excalidraw.png)
 
