@@ -4,6 +4,8 @@ export function equal(oldVal, newVal) {
   return Object.is(oldVal, newVal)
 }
 
+export const extend = Object.assign
+
 export function convert(val) {
   return typeof val === 'object' ? reactive(val) : val
 }

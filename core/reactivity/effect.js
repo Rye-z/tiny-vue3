@@ -4,7 +4,8 @@ import {
   shouldTrack
 } from './reactive.js';
 import {
-  isMap,
+  extend,
+  isMap
 } from '../utils.js';
 
 let activeEffect = null
@@ -17,33 +18,45 @@ export const triggerType = {
   DELETE: 'DELETE'
 }
 
+class ReactiveEffect {
+  constructor(fn, scheduler = null) {
+    this.fn = fn
+    this.scheduler = scheduler
+    this.deps = []
+  }
+
+  run() {
+    if (!effectStack.includes(this)) {
+      cleanupEffects(this)
+      effectStack.push(activeEffect = this)
+      const res = this.fn()
+      // 出栈
+      effectStack.pop()
+      // 恢复到之前的值
+      const n = effectStack.length
+      activeEffect = n > 0 ? effectStack[n - 1] : undefined
+      return res
+    }
+  }
+}
+
 export function effect(fn, options = {
   scheduler: null,
   lazy: false
 }) {
-  const effectFn = () => {
-    cleanupEffects(effectFn)
-    activeEffect = effectFn
-    // 先将当前的 effect 入栈
-    effectStack.push(effectFn)
-    // 执行
-    const res = fn()
-    // 将当前副作用函数弹出
-    effectStack.pop()
-    /*
-    * 注意：如果不是嵌套 effect，activeEffect 的值会被置为 undefined
-    * */
-    // 恢复到之前的值
-    activeEffect = effectStack[effectStack.length - 1]
-    // computed 需要运算结果
-    return res
+  const _effect = new ReactiveEffect(fn)
+  if (options) {
+    extend(_effect, options)
   }
-  effectFn.deps = []
-  effectFn.options = options
-  if (options.lazy) {
-    return effectFn
+
+  if (!options.lazy) {
+    return _effect.run()
   }
-  effectFn()
+
+  const runner = _effect.run.bind(_effect)
+  runner.effect = _effect
+
+  return runner
 }
 
 export function track(target, key) {
@@ -147,10 +160,10 @@ function cleanupEffects(effect) {
 
 function triggerEffects(deps) {
   deps.forEach(effect => {
-    if (effect.options.scheduler) {
-      effect.options.scheduler(effect)
+    if (effect.scheduler) {
+      effect.scheduler(effect.fn)
     } else {
-      effect()
+      effect.run()
     }
   })
 }
