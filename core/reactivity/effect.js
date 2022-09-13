@@ -50,7 +50,7 @@ class ReactiveEffect {
         // 压栈
         effectStack.push(activeEffect = this)
         // 根据递归深度记录位数
-        trackOpBit << ++effectTrackDepth
+        trackOpBit = 1 << ++effectTrackDepth
 
         if (effectTrackDepth <= maxMarkerBits) {
           // 标记 deps 中的依赖为 wasTracked

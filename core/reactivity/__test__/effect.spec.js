@@ -73,6 +73,17 @@ describe('effect', function() {
     })
   });
 
+  it('对同一属性的读写造成的无限循环', function() {
+    const data = {value: 1, value2: 1}
+    const obj = reactive(data)
+    effect(() => {
+      obj.value++
+    })
+    effect(() => {
+      obj.value++
+    })
+  });
+
   it('set 值不变时，不触发副作用函数', function() {
     const obj = reactive({ foo: 1 })
     const fn = jest.fn(() => obj.foo)
