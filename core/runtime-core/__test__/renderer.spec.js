@@ -1,5 +1,4 @@
 import {
-  customRenderer,
   domRenderer
 } from '../renderers';
 import {
@@ -9,16 +8,6 @@ import {
 } from '../index';
 
 describe('renderer', function() {
-  it('customRenderer', function() {
-    const root = { type: 'root'}
-
-    const vnode = {
-      type: 'h1',
-      children: 'hello world'
-    }
-    customRenderer.render(vnode, root)
-    console.log(JSON.stringify(root))
-  });
 
   it('domRenderer', function() {
     const root = document.createElement('div')

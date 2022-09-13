@@ -189,6 +189,7 @@ export function createRenderer(options) {
       patch(oldVNode, newVNode, container)
       newVNode = newChildren[--newEnd]
       oldVNode = oldChildren[--oldEnd]
+      if (!oldVNode || !newVNode) break
     }
 
     // a.3.1 理想状态下，新节点序列未遍历完 -> 创建节点
