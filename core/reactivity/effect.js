@@ -7,10 +7,29 @@ import {
   extend,
   isMap
 } from '../utils.js';
+import {
+  createDep,
+  finalizeDepMarkers,
+  initDepMarkers,
+  newTracked,
+  wasTracked
+} from './dep.js';
 
 let activeEffect = null
 const effectStack = []
 const bucket = new WeakMap()
+
+// The number of effects currently being tracked recursively.
+let effectTrackDepth = 0
+
+export let trackOpBit = 1
+
+/**
+ * The bitwise track markers support at most 30 levels of recursion.
+ * This value is chosen to enable modern JS engines to use a SMI on all platforms.
+ * When recursion depth is greater, fall back to using a full cleanup.
+ */
+const maxMarkerBits = 30
 
 export const triggerType = {
   ADD: 'ADD',
@@ -27,15 +46,31 @@ class ReactiveEffect {
 
   run() {
     if (!effectStack.includes(this)) {
-      cleanupEffects(this)
-      effectStack.push(activeEffect = this)
-      const res = this.fn()
-      // 出栈
-      effectStack.pop()
-      // 恢复到之前的值
-      const n = effectStack.length
-      activeEffect = n > 0 ? effectStack[n - 1] : undefined
-      return res
+      try {
+        // 压栈
+        effectStack.push(activeEffect = this)
+        // 根据递归深度记录位数
+        trackOpBit << ++effectTrackDepth
+
+        if (effectTrackDepth <= maxMarkerBits) {
+          // 标记 deps 中的依赖为 wasTracked
+          initDepMarkers(this.deps)
+        } else {
+          cleanupEffects(this)
+        }
+        return this.fn()
+      } finally {
+        if (effectTrackDepth <= maxMarkerBits) {
+          finalizeDepMarkers(this)
+        }
+        // 恢复到上一级
+        trackOpBit = 1 << --effectTrackDepth
+        // 出栈
+        effectStack.pop()
+        // 恢复到之前的值
+        const n = effectStack.length
+        activeEffect = n > 0 ? effectStack[n - 1] : undefined
+      }
     }
   }
 }
@@ -66,7 +101,7 @@ export function track(target, key) {
   }
   let deps = depsMap.get(key)
   if (!deps) {
-    depsMap.set(key, deps = new Set())
+    depsMap.set(key, deps = createDep())
   }
 
   trackEffects(deps)
@@ -139,11 +174,27 @@ export function trackEffects(deps) {
    * 需要判断是否存在 activeEffect，只有在设置 effect(fn) 的时候，对应的 activeEffect 才是应该收集的 effectFn
    * 仅仅是属性访问不需要添加副作用函数
    */
-  if (!activeEffect || !shouldTrack) return
-  if (deps.has(activeEffect)) return
+  if (!activeEffect) return
 
-  deps.add(activeEffect)
-  activeEffect.deps.push(deps)
+  let shouldTrack = false
+
+  if (effectTrackDepth <= maxMarkerBits) {
+    if (!newTracked(deps)) {
+      // 标记为新依赖
+      deps.n |= trackOpBit
+      // 如果依赖已经被收集，不需要再次收集依赖
+      shouldTrack = !wasTracked(deps)
+    }
+  } else {
+    // cleanup 模式
+    shouldTrack = !deps.has(activeEffect)
+  }
+
+  if (shouldTrack) {
+    deps.add(activeEffect)
+    activeEffect.deps.push(deps)
+  }
+
 }
 
 function cleanupEffects(effect) {
