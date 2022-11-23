@@ -74,7 +74,7 @@ describe('effect', function() {
   });
 
   it('对同一属性的读写造成的无限循环', function() {
-    const data = {value: 1, value2: 1}
+    const data = { value: 1, value2: 1 }
     const obj = reactive(data)
     effect(() => {
       obj.value++
@@ -82,6 +82,17 @@ describe('effect', function() {
     effect(() => {
       obj.value++
     })
+  });
+
+  it('should ', function() {
+    const data = { value: 1}
+    const obj = reactive(data)
+    effect(() => {
+      obj.value++
+      obj.value++
+    })
+
+    obj.value++
   });
 
   it('set 值不变时，不触发副作用函数', function() {
@@ -499,9 +510,9 @@ describe('effect', function() {
 
   it('Map for...of 迭代产生的代理对象被修改时，应触发 for...of 副作用', function() {
     const key = { key: 1 }
-    const key2 = { key2 : 2}
+    const key2 = { key2: 2 }
     const mapValue = new Map().set('bar', 1)
-    const objValue = { foo: 1}
+    const objValue = { foo: 1 }
     const p = reactive(new Map([
       [key, mapValue],
       [key2, objValue]

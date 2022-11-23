@@ -45,6 +45,7 @@ class ReactiveEffect {
   }
 
   run() {
+    // 避免不同的 effect 对同一对象属性的读写造成的无限循环
     if (!effectStack.includes(this)) {
       try {
         // 压栈

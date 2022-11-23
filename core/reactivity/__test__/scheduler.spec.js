@@ -17,7 +17,6 @@ describe('scheduler', () => {
         }
       })
       obj.foo = 0
-
       bar = 3
       jest.runAllTimers()
       expect(bar).toBe(0)
@@ -55,6 +54,7 @@ describe('scheduler', () => {
         flushJob()
       }
     })
+    expect(fn).toHaveBeenCalledTimes(1)
     obj.foo++
     obj.foo++
     obj.foo++
