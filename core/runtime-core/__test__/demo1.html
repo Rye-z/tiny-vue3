@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>reactive demo</title>
+</head>
+<body>
+<div style="font-size: 100px; display: grid; height: 100vh; place-items: center">
+  <div id="root">a</div>
+  <button id="button" style="width: 80px;height: 32px;">button</button>
+  <button id="switchBtn" style="width: 80px;height: 32px;">switchBtn</button>
+</div>
+</body>
+<script type="module">
+  import { ref } from '../../reactivity/ref.js';
+  import { effect } from '../../reactivity/effect.js';
+
+  const root = document.getElementById('root')
+  const button = document.getElementById('button')
+  const switchBtn = document.getElementById('switchBtn')
+
+  const count = ref(0)
+  const shouldTrack = ref(true)
+
+  const increase = () => count.value = count.value + 1
+
+  const updateDom = () =>  {
+    root.innerHTML = shouldTrack.value ? `${count.value}` : Math.random()
+  }
+
+  button.addEventListener('click', increase)
+  switchBtn.addEventListener('click', () => shouldTrack.value = !shouldTrack.value)
+
+  effect(updateDom)
+
+</script>
+</html>

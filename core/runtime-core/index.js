@@ -1,4 +1,4 @@
-import { getSequence } from '../utils';
+import { getSequence } from '../utils.js';
 
 export const TEXT = Symbol()
 export const COMMENT = Symbol()

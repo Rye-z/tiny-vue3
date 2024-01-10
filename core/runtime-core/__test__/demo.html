@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>reactive demo</title>
+</head>
+<body>
+<div style="font-size: 100px; display: grid; height: 100vh; place-items: center">
+  <div id="root">0</div>
+  <button id="button" style="width: 80px;height: 32px;">button</button>
+</div>
+</body>
+<script type="module">
+  import { ref } from '../../reactivity/ref.js';
+  import { effect } from '../../reactivity/effect.js';
+
+  const root = document.getElementById('root')
+  const button = document.getElementById('button')
+
+  const count = ref(0)
+
+  const increase = () => count.value = count.value + 1
+
+  const updateDom = () =>  {
+    root.innerHTML = `${count.value}`
+  }
+  effect(updateDom)
+
+  button.addEventListener('click', increase)
+
+
+</script>
+</html>
